@@ -61,6 +61,7 @@ public class Cliente {
     // handlers... (so dois)
     playButton.addActionListener(new playButtonListener());
     tearButton.addActionListener(new tearButtonListener());
+    pauseButton.addActionListener(new pauseButtonListener());
 
     // Image display label
     iconLabel.setIcon(null);
@@ -111,6 +112,17 @@ public class Cliente {
       System.out.println("Play Button pressed !");
       // start the timers ...
       cTimer.start();
+    }
+  }
+
+  // Handler for Pause button
+  // -----------------------
+  class pauseButtonListener implements ActionListener {
+    public void actionPerformed(ActionEvent e) {
+
+      System.out.println("Pause Button pressed !");
+      // stop the timers ...
+      cTimer.stop();
     }
   }
 
