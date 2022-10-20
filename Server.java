@@ -1,9 +1,12 @@
 /*****************************************************************************************
- * Sistemas Distribuídos - 22/23
- * NOME DO TRABALHO AQUI
+ * Engenharia de Serviços de Rede - 22/23
+ * TP2 - Serviço Over the Top para entrega de multimédia
+ * Módulo: Cliente
  * Módulo: Servidor
- * Grupo:
- * Programadores: a83630 - Duarte Serrão
+ * Grupo: PL83
+ * Programadores:  a83630 - Duarte Serrão
+ *                pg50794 - Vasco Oliveira
+ *                pg50340 - Diogo Matos
  *****************************************************************************************/
 import java.io.IOException;
 import java.net.ServerSocket;
