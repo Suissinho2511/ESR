@@ -12,8 +12,8 @@ public class Server {
             int i = 0;
             while (true) {
                 out.writeUTF("Hello Client : " + i++);
-                out.flush();
                 Thread.sleep(1000);
+                out.flush();
             }
 
         } catch (Exception e) {
