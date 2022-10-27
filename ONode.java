@@ -15,6 +15,7 @@ public class ONode {
                 String str = in.readUTF();
                 System.out.println("Server: " + str);
                 out.writeUTF(str);
+                Thread.sleep(1000);
                 out.flush();
             }
         } catch (Exception e) {
