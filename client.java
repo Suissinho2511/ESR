@@ -1,20 +1,18 @@
-package Test;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
 
-public class client {
-    public void cliente() {
+public class Client {
+    public Client() {
         try {
-            Socket socket = new Socket("10.0.0.10", 5000);
+            Socket socket = new Socket("localhost", 5000);
             DataInputStream in = new DataInputStream(socket.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-            out.writeUTF("Hello Server");
-            out.flush();
-            String str = in.readUTF();
-            System.out.println("Server: " + str);
-            out.close();
+            // DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            while (true) {
+                String str = in.readUTF();
+                System.out.println("Server: " + str);
+            }
+            // out.close();
             in.close();
             socket.close();
         } catch (Exception e) {
@@ -23,7 +21,6 @@ public class client {
     }
 
     public static void main(String[] args) {
-        client client = new client();
-        client.cliente();
+        Client client = new Client();
     }
 }

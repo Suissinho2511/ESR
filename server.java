@@ -10,12 +10,16 @@ public class Server {
             Socket socket = server.accept();
             // DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            while (true) {
+                out.writeUTF("Hello Client");
+                out.flush();
+            }
             // String str = in.readUTF();
-            System.out.println("Client: " + str);
-            out.writeUTF("Hello Client");
-            out.flush();
+            // System.out.println("Client: " + str);
+            // out.writeUTF("Hello Client");
+            // out.flush();
             out.close();
-            in.close();
+            // in.close();
             socket.close();
             server.close();
         } catch (Exception e) {
