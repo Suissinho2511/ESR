@@ -8,20 +8,14 @@ public class Server {
         try {
             ServerSocket server = new ServerSocket(5000);
             Socket socket = server.accept();
-            // DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            int i = 0;
             while (true) {
-                out.writeUTF("Hello Client");
+                out.writeUTF("Hello Client : " + i++);
                 out.flush();
+                Thread.sleep(1000);
             }
-            // String str = in.readUTF();
-            // System.out.println("Client: " + str);
-            // out.writeUTF("Hello Client");
-            // out.flush();
-            // out.close();
-            // in.close();
-            // socket.close();
-            // server.close();
+
         } catch (Exception e) {
             System.out.println(e);
         }
