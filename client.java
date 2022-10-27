@@ -3,9 +3,9 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 
 public class Client {
-    public Client() {
+    public Client(String ip) {
         try {
-            Socket socket = new Socket("10.0.0.11", 5000);
+            Socket socket = new Socket(ip, 5000);
             DataInputStream in = new DataInputStream(socket.getInputStream());
             while (true) {
                 String str = in.readUTF();
@@ -17,6 +17,6 @@ public class Client {
     }
 
     public static void main(String[] args) {
-        Client client = new Client();
+        Client client = new Client(args[1]);
     }
 }
