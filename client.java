@@ -5,7 +5,7 @@ import java.net.Socket;
 public class Client {
     public Client() {
         try {
-            Socket socket = new Socket("localhost", 5000);
+            Socket socket = new Socket("10.0.0.11", 5000);
             DataInputStream in = new DataInputStream(socket.getInputStream());
             // DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             while (true) {
@@ -13,8 +13,8 @@ public class Client {
                 System.out.println("Server: " + str);
             }
             // out.close();
-            in.close();
-            socket.close();
+            // in.close();
+            // socket.close();
         } catch (Exception e) {
             System.out.println(e);
         }
