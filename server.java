@@ -15,6 +15,7 @@ public class Server {
             while (true) {
                 // String str = in.readUTF();
                 // System.out.println("Server: " + str);
+                Thread.sleep(1000);
                 out.writeUTF("Hello client: " + i++);
                 out.flush();
             }
