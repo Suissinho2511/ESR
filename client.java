@@ -1,15 +1,15 @@
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.net.Socket;
 
 public class Client {
     public Client(String ip) {
         try {
-            Socket socket = new Socket(ip, 5000);
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            while (true) {
-                String str = in.readUTF();
-                System.out.println("Server: " + str);
+            try (Socket socket = new Socket(ip, 5000)) {
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                while (true) {
+                    String str = in.readUTF();
+                    System.out.println("Server: " + str);
+                }
             }
         } catch (Exception e) {
             System.out.println(e);
