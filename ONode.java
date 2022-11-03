@@ -6,11 +6,11 @@ import java.net.Socket;
 public class ONode {
     public ONode(String ip) {
         try {
-            ServerSocket server = new ServerSocket(5000);
-            Socket socket = server.accept();
-            Socket socketR = new Socket(ip, 5000);
+            ServerSocket serverR = new ServerSocket(5000);
+            Socket socketR = serverR.accept();
+            Socket socketS = new Socket(ip, 5000);
             DataInputStream in = new DataInputStream(socketR.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            DataOutputStream out = new DataOutputStream(socketS.getOutputStream());
             while (true) {
                 String str = in.readUTF();
                 System.out.println("Server: " + str);
