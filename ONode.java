@@ -25,6 +25,6 @@ public class ONode {
     }
 
     public static void main(String[] args) {
-        ONode oNode = new ONode(args[1]);
+        ONode oNode = new ONode(args[0]);
     }
 }
