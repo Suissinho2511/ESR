@@ -5,8 +5,6 @@
    colocar o cliente primeiro a correr que o servidor dispara logo!
    ---------------------- */
 
-package UDP;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;

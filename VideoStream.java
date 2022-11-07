@@ -1,5 +1,3 @@
-//VideoStream
-package UDP;
 
 import java.io.*;
 

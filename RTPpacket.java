@@ -1,5 +1,4 @@
 //class RTPpacket
-package UDP;
 
 public class RTPpacket {
 
