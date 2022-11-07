@@ -8,7 +8,7 @@ public class clientUDP {
 
     public clientUDP() {
         try {
-            DatagramSocket socket = new DatagramSocket(7000);
+            DatagramSocket socket = new DatagramSocket(5000);
             byte[] buffer = new byte[1024];
             while (true) {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);

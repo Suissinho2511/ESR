@@ -11,7 +11,7 @@ public class serverUDP {
     public serverUDP(String ips[]) {
         neighborsIP = ips;
         try {
-            DatagramSocket socket = new DatagramSocket(6000);
+            DatagramSocket socket = new DatagramSocket(5001);
             byte[] buffer = new byte[1024];
             int i = 0;
 

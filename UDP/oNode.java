@@ -24,7 +24,7 @@ public class oNode {
                 str = "+++ " + str + " +++";
                 buffer = str.getBytes();
                 for (String ip : neighborsIP) {
-                    packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 7000);
+                    packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 5000);
                     socket_out.send(packet);
                 }
             }
