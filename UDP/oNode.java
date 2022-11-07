@@ -21,7 +21,7 @@ public class oNode {
             while (true) {
                 socket_in.receive(packet);
                 String str = new String(packet.getData(), 0, packet.getLength());
-                str = "+++ " + str + " +++";
+                str = "< " + str + " >";
                 buffer = str.getBytes();
                 for (String ip : neighborsIP) {
                     packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 5000);
