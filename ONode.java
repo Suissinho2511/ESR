@@ -1,21 +1,32 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+package UDP;
 
-public class ONode {
-    public ONode(String ip) {
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+
+public class oNode {
+
+    String neighborsIP[]; // neighbor ip
+
+    public oNode(String ips[]) {
+        neighborsIP = ips;
+
         try {
-            ServerSocket serverR = new ServerSocket(5000);
-            Socket socketR = serverR.accept();
-            Socket socketS = new Socket(ip, 5000);
-            DataInputStream in = new DataInputStream(socketR.getInputStream());
-            DataOutputStream out = new DataOutputStream(socketS.getOutputStream());
+            DatagramSocket socket_in = new DatagramSocket(5000);
+            DatagramSocket socket_out = new DatagramSocket(5001);
+
+            byte[] buffer = new byte[1024];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+            int i = 0;
             while (true) {
-                String str = in.readUTF();
-                System.out.println("Server: " + str);
-                out.writeUTF(str);
-                out.flush();
+                socket_in.receive(packet);
+                String str = new String(packet.getData(), 0, packet.getLength());
+                str = "< " + str + " >";
+                buffer = str.getBytes();
+                for (String ip : neighborsIP) {
+                    packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 5000);
+                    socket_out.send(packet);
+                }
             }
         } catch (Exception e) {
             System.out.println(e);
@@ -23,6 +34,6 @@ public class ONode {
     }
 
     public static void main(String[] args) {
-        ONode oNode = new ONode(args[0]);
+        oNode node = new oNode(args); // client ip
     }
 }
