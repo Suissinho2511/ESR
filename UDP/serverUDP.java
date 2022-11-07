@@ -5,7 +5,11 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 public class serverUDP {
-    public serverUDP(String ip) {
+
+    String neighborsIP[]; // neighbor ip
+
+    public serverUDP(String ips[]) {
+        neighborsIP = ips;
         try {
             DatagramSocket socket = new DatagramSocket(6000);
             byte[] buffer = new byte[1024];
@@ -16,8 +20,10 @@ public class serverUDP {
                 System.out.println(str);
                 buffer = str.getBytes();
 
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 5000);
-                socket.send(packet);
+                for (String ip : neighborsIP) {
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 5000);
+                    socket.send(packet);
+                }
 
                 Thread.sleep(1000);
             }
@@ -27,6 +33,6 @@ public class serverUDP {
     }
 
     public static void main(String[] args) {
-        serverUDP server = new serverUDP(args[0]); // oNode ip
+        serverUDP server = new serverUDP(args); // oNode ip
     }
 }

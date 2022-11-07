@@ -5,7 +5,12 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 public class oNode {
-    public oNode(String ip) {
+
+    String neighborsIP[]; // neighbor ip
+
+    public oNode(String ips[]) {
+        neighborsIP = ips;
+
         try {
             DatagramSocket socket_in = new DatagramSocket(5000);
             DatagramSocket socket_out = new DatagramSocket(5001);
@@ -18,9 +23,10 @@ public class oNode {
                 String str = new String(packet.getData(), 0, packet.getLength());
                 str = "+++ " + str + " +++";
                 buffer = str.getBytes();
-
-                packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 7000);
-                socket_out.send(packet);
+                for (String ip : neighborsIP) {
+                    packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 7000);
+                    socket_out.send(packet);
+                }
             }
         } catch (Exception e) {
             System.out.println(e);
@@ -28,6 +34,6 @@ public class oNode {
     }
 
     public static void main(String[] args) {
-        oNode node = new oNode(args[0]); // client ip
+        oNode node = new oNode(args); // client ip
     }
 }

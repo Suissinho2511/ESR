@@ -5,6 +5,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 public class clientUDP {
+
     public clientUDP() {
         try {
             DatagramSocket socket = new DatagramSocket(7000);
