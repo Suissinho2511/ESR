@@ -1,9 +1,3 @@
-/* ------------------
-   Servidor
-   usage: java Servidor [Video file]
-   adaptado dos originais pela equipa docente de ESR (nenhumas garantias)
-   colocar primeiro o cliente a correr, porque este dispara logo
-   ---------------------- */
 
 import java.io.*;
 import java.net.*;
