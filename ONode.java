@@ -13,7 +13,7 @@ public class oNode {
             DatagramSocket socket_in = new DatagramSocket(5000);
             DatagramSocket socket_out = new DatagramSocket(5001);
 
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[1 << 16];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             int i = 0;
             while (true) {
