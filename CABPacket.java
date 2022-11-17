@@ -3,18 +3,29 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 
-public class CABp {
+public class CABPacket {
 
     // ------------------------------------
-    // Confusing and bloated protocol
+    // Confusing And Bloated protocol Packet
     // ------------------------------------
 
+	// this sucks:
     private final InetAddress serverIP;
     private final long initTimestamp;
     private HashMap<InetAddress, Long> path;
     private int availableJumps;
 
-    public CABp(InetAddress serverIP, int maxJumps) {
+	/*
+	 * +---------------------------------------------------------------------------+
+	 * |																		   |
+	 * +---------------------------------------------------------------------------+
+	 * 
+	 */
+	// cool variables:
+	private String type;
+	private byte[] payload;
+
+    public CABPacket(InetAddress serverIP, int maxJumps) {
         this.serverIP = serverIP;
         this.initTimestamp = System.currentTimeMillis();
         this.path = new HashMap<>();
