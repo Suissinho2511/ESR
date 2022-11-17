@@ -2,11 +2,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class oNode {
+public class ONode {
 
     String neighborsIP[]; // neighbor ip
 
-    public oNode(String ips[]) {
+    public ONode(String ips[]) {
         neighborsIP = ips;
 
         try {
@@ -31,6 +31,6 @@ public class oNode {
     }
 
     public static void main(String[] args) {
-        oNode node = new oNode(args); // client ip
+        ONode node = new ONode(args);
     }
 }
