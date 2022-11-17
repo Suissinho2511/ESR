@@ -15,7 +15,7 @@ public class ONode {
 
             byte[] buffer = new byte[1 << 16];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-            int i = 0;
+
             while (true) {
                 socket_in.receive(packet);
                 String str = new String(packet.getData(), 0, packet.getLength());
@@ -25,6 +25,7 @@ public class ONode {
                     socket_out.send(packet);
                 }
             }
+
         } catch (Exception e) {
             System.out.println(e);
         }
