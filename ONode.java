@@ -13,16 +13,15 @@ public class ONode {
             DatagramSocket socket_in = new DatagramSocket(5000);
             DatagramSocket socket_out = new DatagramSocket(5001);
 
-            byte[] buffer = new byte[1 << 16];
+            byte[] buffer = new byte[20000];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
             while (true) {
                 socket_in.receive(packet);
-                String str = new String(packet.getData(), 0, packet.getLength());
-                buffer = str.getBytes();
+                byte[] data = packet.getData();
                 for (String ip : neighborsIP) {
-                    packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), 5000);
-                    socket_out.send(packet);
+                    DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 6000);
+                    socket_out.send(out_packet);
                 }
             }
 
