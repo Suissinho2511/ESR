@@ -30,7 +30,7 @@ public class Cliente {
   // ----------------
   DatagramPacket rcvdp; // UDP packet received from the server (to receive)
   DatagramSocket RTPsocket; // socket to be used to send and receive UDP packet
-  static int RTP_RCV_PORT = 6000; // port where the client will receive the RTP packets
+  static int RTP_RCV_PORT = 5000; // port where the client will receive the RTP packets
 
   Timer cTimer; // timer used to receive data from the UDP socket
   byte[] cBuf; // buffer used to store data received from the server

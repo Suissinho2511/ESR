@@ -20,7 +20,7 @@ public class ONode {
                 socket_in.receive(packet);
                 byte[] data = packet.getData();
                 for (String ip : neighborsIP) {
-                    DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 6000);
+                    DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
                     socket_out.send(out_packet);
                 }
             }
