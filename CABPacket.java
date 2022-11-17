@@ -1,41 +1,48 @@
+import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.net.DatagramPacket;
 import java.net.InetAddress;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
-public class CABPacket {
+public class CABPacket implements Serializable{
 
-    // ------------------------------------
-    // Confusing And Bloated protocol Packet
-    // ------------------------------------
-
-	// this sucks:
-    private final InetAddress serverIP;
-    private final long initTimestamp;
-    private HashMap<InetAddress, Long> path;
+    private String type;
     private int availableJumps;
 
-	/*
-	 * +----------------+----------------------------------------------------------+
-	 * | 	  type		|						payload							   |
-	 * +----------------+----------------------------------------------------------+
-	 * 
-	 */
-	// cool variables:
-	private String type;
-	private byte[] payload;
+    private LinkedHashMap<InetAddress, Long> path;
+    
 
-    public CABPacket(InetAddress serverIP, int maxJumps) {
-        this.serverIP = serverIP;
-        this.initTimestamp = System.currentTimeMillis();
-        this.path = new HashMap<>();
+
+    public CABPacket(String type, int maxJumps, InetAddress currAddress, Long timestamp) {
+        this.type = type;
         this.availableJumps = maxJumps;
+        this.path = new LinkedHashMap<>();
+        this.path.put(currAddress, timestamp);
     }
+
+    public CABPacket(DatagramPacket packet, InetAddress currAddress, Long timestamp){
+        byte[] payload = packet.getData();
+
+
+    }
+    
+
+    public <K, V> Entry<InetAddress, Long> getFirst() {
+        if (this.path.isEmpty()) return null;
+        return this.path.entrySet().iterator().next();
+    }
+
+    public <K, V> Entry<InetAddress, Long> getLast() throws NoSuchFieldException, IllegalAccessException{
+        Field tail = this.path.getClass().getDeclaredField("tail");
+        tail.setAccessible(true);
+        return (Entry<InetAddress, Long>) tail.get(this.path);
+      }
+
+
 
     public int getAvailableJumps() {
         return this.availableJumps;
-    }
-
-    public InetAddress getServerIP() {
-        return this.serverIP;
     }
 
     public void addNode(InetAddress ip) {
@@ -44,7 +51,7 @@ public class CABPacket {
     }
 
     public long getDelay() {
-        return System.currentTimeMillis() - initTimestamp;
+        return System.currentTimeMillis() - this.getFirst().getValue();
     }
 
     public String[] getPath() {
