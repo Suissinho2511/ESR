@@ -10,18 +10,18 @@ public class ONode {
         neighborsIP = ips;
 
         try {
-            DatagramSocket socket_in = new DatagramSocket(5000);
-            DatagramSocket socket_out = new DatagramSocket(5001);
+            DatagramSocket socket_data = new DatagramSocket(5000);
+            DatagramSocket socket_control = new DatagramSocket(5001);
 
             byte[] buffer = new byte[20000];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
             while (true) {
-                socket_in.receive(packet);
+                socket_data.receive(packet);
                 byte[] data = packet.getData();
                 for (String ip : neighborsIP) {
                     DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
-                    socket_out.send(out_packet);
+                    socket_data.send(out_packet);
                 }
             }
 
