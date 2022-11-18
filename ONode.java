@@ -16,14 +16,41 @@ public class ONode {
             byte[] buffer = new byte[20000];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-            while (true) {
-                socket_data.receive(packet);
-                byte[] data = packet.getData();
-                for (String ip : neighborsIP) {
-                    DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
-                    socket_data.send(out_packet);
-                }
-            }
+
+
+			// Data thread
+
+            new Thread(() -> { try {
+
+				while (true) {
+					socket_data.receive(packet);
+					byte[] data = packet.getData();
+					for (String ip : neighborsIP) {
+						DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
+						socket_data.send(out_packet);
+					}
+				}
+
+				} catch (Exception e) {
+					System.out.println(e);
+					socket_data.close();
+					socket_control.close();
+					System.exit(-1);
+				}
+            }).start();
+
+
+
+			// Control thread
+
+            new Thread(() -> {
+
+				System.out.println("UWU");
+				socket_control.close();
+
+            }).start();
+
+
 
         } catch (Exception e) {
             System.out.println(e);
@@ -31,6 +58,6 @@ public class ONode {
     }
 
     public static void main(String[] args) {
-        ONode node = new ONode(args);
+        new ONode(args);
     }
 }

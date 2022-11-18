@@ -96,7 +96,7 @@ public class Cliente {
   // main
   // ------------------------------------
   public static void main(String argv[]) throws Exception {
-    Cliente t = new Cliente();
+    new Cliente();
   }
 
   // ------------------------------------

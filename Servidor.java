@@ -85,9 +85,9 @@ public class Servidor extends JFrame implements ActionListener {
     if (f.exists()) {
       // Create a Main object
       Servidor s = new Servidor(argv[0]);
-      // show GUI: (opcional!)
-      // s.pack();
-      // s.setVisible(true);
+	  
+      s.pack();
+      s.setVisible(false);
     } else
       System.out.println("Ficheiro de video não existe: " + VideoFileName);
   }

@@ -27,7 +27,7 @@ public class CABControlPacket extends CABPacket {
 
     public CABControlPacket(DatagramPacket packet, InetAddress currAddress, Long timestamp){
 		this();
-        byte[] payload = packet.getData();
+        //byte[] payload = packet.getData();
     }
 
 
@@ -37,7 +37,8 @@ public class CABControlPacket extends CABPacket {
         return this.path.entrySet().iterator().next();
     }
 
-    public <K, V> Entry<InetAddress, Long> getLast() throws NoSuchFieldException, IllegalAccessException{
+	@SuppressWarnings("unchecked")
+    public <K, V> Entry<InetAddress, Long> getLast() throws NoSuchFieldException, IllegalAccessException {
         Field tail = this.path.getClass().getDeclaredField("tail");
         tail.setAccessible(true);
         return (Entry<InetAddress, Long>) tail.get(this.path);
