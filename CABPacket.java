@@ -1,18 +1,6 @@
 import java.io.Serializable;
-import java.lang.reflect.Field;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
 
-public class CABPacket implements Serializable{
-
-    private String type;
-    private int availableJumps;
-
-    private LinkedHashMap<InetAddress, Long> path;
-    
-
+public abstract class CABPacket implements Serializable {
 
     public CABPacket(String type, int maxJumps, InetAddress currAddress, Long timestamp) {
         this.type = type;
@@ -62,5 +50,6 @@ public class CABPacket implements Serializable{
     public String[] getPath() {
         return path.keySet().stream().map(InetAddress::getHostAddress).toArray(String[]::new);
     }
+
 
 }
