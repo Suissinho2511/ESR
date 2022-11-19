@@ -54,6 +54,11 @@ public class CABPacket implements Serializable{
         return System.currentTimeMillis() - this.getFirst().getValue();
     }
 
+    public long getDelay(InetAddress source) {
+        return System.currentTimeMillis() - this.path.get(source);
+    }
+
+
     public String[] getPath() {
         return path.keySet().stream().map(InetAddress::getHostAddress).toArray(String[]::new);
     }
