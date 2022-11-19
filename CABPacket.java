@@ -1,16 +1,35 @@
-import java.io.Serializable;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+import java.nio.ByteBuffer;
 
-public abstract class CABPacket implements Serializable {
+public abstract class CABPacket {
 
-    public CABPacket(String type, int maxJumps, InetAddress currAddress, Long timestamp) {
+    private int type;
+    private int availableJumps;
+    private LinkedHashMap<InetAddress, Long> path;
+
+    public CABPacket(int type, int maxJumps, InetAddress currAddress, Long timestamp) {
         this.type = type;
         this.availableJumps = maxJumps;
         this.path = new LinkedHashMap<>();
         this.path.put(currAddress, timestamp);
     }
 
-    public CABPacket(DatagramPacket packet, InetAddress currAddress, Long timestamp){
+    public CABPacket(DatagramPacket packet){
         byte[] payload = packet.getData();
+
+        
+        type = ByteBuffer.wrap(payload).getInt();
+        availableJumps = ByteBuffer.wrap(payload).getInt();
+
+        while (ByteBuffer.wrap(payload).naochegouFinal)
+        {
+            InetAddress add = InetAddress.getByAddress(ByteBuffer.wrap(payload));
+            Long time = ByteBuffer.wrap(payload).getLong();
+            path.put(add, time);
+        }
 
 
     }
@@ -25,7 +44,9 @@ public abstract class CABPacket implements Serializable {
         Field tail = this.path.getClass().getDeclaredField("tail");
         tail.setAccessible(true);
         return (Entry<InetAddress, Long>) tail.get(this.path);
-      }
+    }
+
+
 
 
 
