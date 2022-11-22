@@ -70,9 +70,16 @@ public class ONode {
 				byte[] ctrl_buffer = new byte[20000];
 				DatagramPacket ctrl_packet = new DatagramPacket(ctrl_buffer, ctrl_buffer.length);
 
+				// TODO: probe (send initial control packet)
+
 				while (true) {
 					socket_control.receive(ctrl_packet);
 					byte[] data = ctrl_packet.getData();
+
+					// TODO: merge current topology with probed topology (+delays)
+					// TODO: if it's the same do nothing, else:
+					// TODO: build new packet with our new topology
+
 					for (String ip : neighborsIP) {
 						DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5001);
 						socket_control.send(out_packet);
@@ -101,6 +108,9 @@ public class ONode {
 
 
 class Graph implements Serializable {
+
+	//TODO: Adaptar para incluir delays e ter isso em consideração no pathfinding
+
 	/*private class Vertex {
 		String label;
 		Vertex(String label) {
