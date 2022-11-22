@@ -2,6 +2,7 @@ import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -13,10 +14,23 @@ import java.util.Set;
 
 public class ONode {
 
-    String neighborsIP[]; // neighbor ip
+    private String neighborsIP[]; // neighbor ip
+	private Graph topology;
 
     public ONode(String ips[]) {
-        neighborsIP = ips;
+
+        this.neighborsIP = ips;
+
+
+		// Start building overlay topology
+		String self_ip = "self";
+		try {self_ip = InetAddress.getLocalHost().toString(); topology.addVertex(self_ip);} catch (UnknownHostException ignore) {}
+		for (String ip : neighborsIP) {
+			topology.addVertex(ip);
+			topology.addEdge(self_ip, ip);
+		}
+
+
 
         try {
             DatagramSocket socket_data = new DatagramSocket(5000);
@@ -33,6 +47,7 @@ public class ONode {
 					socket_data.receive(data_packet);
 					byte[] data = data_packet.getData();
 					for (String ip : neighborsIP) {
+						if(ip.equals(data_packet.getAddress().toString())) continue;
 						DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
 						socket_data.send(out_packet);
 					}
@@ -86,12 +101,12 @@ public class ONode {
 
 
 class Graph implements Serializable {
-	private class Vertex {
+	/*private class Vertex {
 		String label;
 		Vertex(String label) {
 			this.label = label;
 		}
-	}
+	}*/
 
 	private final Map<String, List<String>> adjVertices = new HashMap<>();
 
