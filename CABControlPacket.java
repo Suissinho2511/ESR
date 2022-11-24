@@ -27,12 +27,12 @@ public class CABControlPacket extends CABPacket {
         type = ByteBuffer.wrap(payload).getInt();
         availableJumps = ByteBuffer.wrap(payload).getInt();
 
-        while (ByteBuffer.wrap(payload).naochegouFinal)
+        /*while (ByteBuffer.wrap(payload).naochegouFinal)
         {
             InetAddress add = InetAddress.getByAddress(ByteBuffer.wrap(payload));
             Long time = ByteBuffer.wrap(payload).getLong();
             path.put(add, time);
-        }
+        }*/
     }
     
 

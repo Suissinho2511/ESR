@@ -27,15 +27,20 @@ public class ONode {
 
     public ONode(String ips[]) {
 
-        this.neighborsIP = Arrays.asList(ips);
+		this.neighborsIP = new ArrayList<>();
+		this.neighborsIP.addAll(Arrays.asList(ips));
 
 		// Start building overlay topology
-		final String self_ip;
-		try {self_ip = InetAddress.getLocalHost().toString(); this.topology.addVertex(self_ip);} catch (UnknownHostException ignore) {self_ip = "self";}
+		String tmp_ip;
+		try {tmp_ip = InetAddress.getLocalHost().toString(); this.topology.addVertex(tmp_ip);} catch (UnknownHostException ignore) {tmp_ip = "self";}
+		
+		final String self_ip = tmp_ip;
+		this.topology = new Graph();
 		for (String ip : this.neighborsIP) {
 			this.topology.addVertex(ip);
 			this.topology.addEdge(self_ip, ip);
 		}
+		System.out.println("[DEBUG] Topology:\n"+topology.toString());
 
 
 
@@ -43,20 +48,27 @@ public class ONode {
 
 			// Listen for UDP traffic on port 5000 - Data
 			DatagramSocket socket_data = new DatagramSocket(5000);
+			System.out.println("[INFO] Data socket created");
 			
 			// Listen for TCP connections on port 5001 - Control
 			ServerSocket socket_control = new ServerSocket(5001);
+			System.out.println("[INFO] Control server socket created");
 
 			// Connect to neighbors
-			this.connections = new HashMap<String,Socket>(this.neighborsIP.size());
+			this.connections = new HashMap<String,Socket>();
 			for (String ip : this.neighborsIP) {
-				Socket s = new Socket(ip, 5001);
-				this.connections.put(self_ip, s);
+				try {
+					Socket s = new Socket(ip, 5001);
+					this.connections.put(self_ip, s);
+					System.out.println("[INFO] Connected to neighbor "+ip);
+				} catch (Exception offline) {System.out.println("[WARNING] Neighbor "+ip+" offline!");}
 			}
 
 			// Send initial probe to all neighbors
-			for (Socket s : this.connections.values())
+			for (Socket s : this.connections.values()) {
 				this.topology.writeToSocket(s);
+				System.out.println("[DEBUG] Probed "+s.getInetAddress().toString());
+			}
 
 
 
@@ -75,19 +87,24 @@ public class ONode {
 					while (true) {
 
 						// Read graph
-						Graph other = Graph.readFromSocket(thread_socket);
+						/*Graph other = Graph.readFromSocket(thread_socket);
+						System.out.println("[DEBUG] Received topology from "+s.getInetAddress().toString());
 
 						// Merge with our current topology and check for changes
 						boolean changed = this.topology.merge(other);
+						System.out.println("[DEBUG] Topology from "+s.getInetAddress().toString()+" merged, with"+(changed?"":"out")+" changes");
 						if(!changed) continue;
 
 						// Spread new topology if changed
-						for (Socket out : this.connections.values())
+						for (Socket out : this.connections.values()) {	
 							this.topology.writeToSocket(out);
+							System.out.println("[DEBUG] Sent new topology from "+s.getInetAddress().toString()+" to "+out.getInetAddress().toString());
+						}*/
 
 					}
 
 					} catch (Exception e) {
+						System.out.println("[ERROR] Control thread for neighbor "+s.getInetAddress().toString()+" crashed!");
 						System.out.println(e);
 						System.exit(-1);
 					}
@@ -98,20 +115,26 @@ public class ONode {
 				// Control thread for server socket (TODO: Método para isto)
 				new Thread(() -> { try {
 
-					Socket new_socket = socket_control.accept();
-					String ip = new_socket.getInetAddress().toString();
+					while(true) {
+						
+						Socket new_socket = socket_control.accept();
+						String ip = new_socket.getInetAddress().toString();
 
-					// New neighbor:
-					if (!this.neighborsIP.contains(ip)) {
-						this.neighborsIP.add(ip);
-						this.connections.put(ip,new_socket);
-						this.topology.addVertex(ip);
-						this.topology.addEdge(self_ip, ip);
-						// TODO: Start new thread for neighbor
+						// New neighbor:
+						if (!this.neighborsIP.contains(ip)) {
+							System.out.println("[INFO] New neighbor: "+ip);
+							this.neighborsIP.add(ip);
+							this.connections.put(ip,new_socket);
+							this.topology.addVertex(ip);
+							this.topology.addEdge(self_ip, ip);
+							System.out.println("[DEBUG] Topology:\n"+topology.toString());
+							// TODO: Start new thread for neighbor
+						}
 					}
 					
 
 					} catch (Exception e) {
+						System.out.println("[ERROR] Control thread crashed!");
 						System.out.println(e);
 						System.exit(-1);
 					}
@@ -137,20 +160,25 @@ public class ONode {
 
 					// Add neighbor if not already a neighbor (TODO: Método para isto, ou então ignorar pacotes de hosts desconhecidos)
 					String incoming_ip = data_packet.getAddress().toString();
-					if(neighborsIP.contains(incoming_ip)) neighborsIP.add(incoming_ip);
+					//if(this.neighborsIP.contains(incoming_ip)) this.neighborsIP.add(incoming_ip);
+					//if(this.neighborsIP.contains(incoming_ip)) continue;
+					
+					//System.out.println("[DEBUG] Received data from "+incoming_ip);
 
 					// Flood neighbors
-					for (String ip : neighborsIP) {
+					for (String ip : this.neighborsIP) {
 
 						// (except the one who sent packet)
 						if(ip.equals(incoming_ip)) continue;
 
 						DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
 						socket_data.send(out_packet);
+						//System.out.println("[DEBUG] Sent data to "+ip);
 					}
 				}
 
 				} catch (Exception e) {
+					System.out.println("[ERROR] Data thread crashed!");
 					System.out.println(e);
 					System.exit(-1);
 				}
@@ -243,7 +271,8 @@ class Graph implements Serializable {
 				}
 			}
 		}
-		return visited.stream().toList();
+		//return visited.stream().toList();
+		return new ArrayList<>(visited);
 	}
 
 	public List<String> getAdjVertices(String label) {
@@ -252,6 +281,25 @@ class Graph implements Serializable {
 
 	public Set<String> getNodes() {
 		return adjVertices.keySet();
+	}
+
+	public boolean equals(Graph other) {
+
+		for (String node : other.getNodes())
+			if(!this.getNodes().contains(node)) return false;
+			
+		for (String node : this.getNodes())
+			if(!other.getNodes().contains(node)) return false;
+
+		for (String from : other.getNodes())
+			for (String to : other.getAdjVertices(from))
+				if(!this.getAdjVertices(from).contains(to)) return false;
+				
+		for (String from : this.getNodes())
+			for (String to : this.getAdjVertices(from))
+				if(!other.getAdjVertices(from).contains(to)) return false;
+
+		return true;
 	}
 
 	public boolean merge(Graph other) {
@@ -286,5 +334,16 @@ class Graph implements Serializable {
 		ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
         out.writeObject(this);
         out.close();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder str = new StringBuilder();
+
+		for (String from : this.getNodes())
+			for (String to : this.getAdjVertices(from))
+				str.append(from+'-'+to+'\n');
+
+		return str.toString();
 	}
 }
