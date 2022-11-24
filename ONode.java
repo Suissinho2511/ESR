@@ -4,12 +4,14 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -20,23 +22,23 @@ import java.util.Set;
 
 public class ONode {
 
-    private List<String> neighborsIP;
-	private Map<String,Socket> connections; // Sockets to neighbors
+    private List<String> neighboursIP;
+	private Map<String,Socket> connections;
 	private Graph topology;
+	private final String self_ip;
+	private DatagramSocket socket_data;
+	private ServerSocket socket_control;
 
 
     public ONode(String ips[]) {
 
-		this.neighborsIP = new ArrayList<>();
-		this.neighborsIP.addAll(Arrays.asList(ips));
+		this.neighboursIP = new ArrayList<>();
+		this.neighboursIP.addAll(Arrays.asList(ips));
 
 		// Start building overlay topology
-		String tmp_ip;
-		try {tmp_ip = InetAddress.getLocalHost().toString(); this.topology.addVertex(tmp_ip);} catch (UnknownHostException ignore) {tmp_ip = "self";}
-		
-		final String self_ip = tmp_ip;
-		this.topology = new Graph();
-		for (String ip : this.neighborsIP) {
+		this.topology = new Graph();	
+		this.self_ip = getPublicIpAddress();
+		for (String ip : this.neighboursIP) {
 			this.topology.addVertex(ip);
 			this.topology.addEdge(self_ip, ip);
 		}
@@ -47,145 +49,41 @@ public class ONode {
         try {
 
 			// Listen for UDP traffic on port 5000 - Data
-			DatagramSocket socket_data = new DatagramSocket(5000);
+			this.socket_data = new DatagramSocket(5000);
 			System.out.println("[INFO] Data socket created");
 			
 			// Listen for TCP connections on port 5001 - Control
-			ServerSocket socket_control = new ServerSocket(5001);
+			this.socket_control = new ServerSocket(5001);
 			System.out.println("[INFO] Control server socket created");
 
-			// Connect to neighbors
+			// Connect to neighbours
 			this.connections = new HashMap<String,Socket>();
-			for (String ip : this.neighborsIP) {
+			for (String ip : this.neighboursIP) {
 				try {
 					Socket s = new Socket(ip, 5001);
 					this.connections.put(self_ip, s);
-					System.out.println("[INFO] Connected to neighbor "+ip);
-				} catch (Exception offline) {System.out.println("[WARNING] Neighbor "+ip+" offline!");}
+					System.out.println("[INFO] Connected to neighbour "+ip);
+				} catch (Exception offline) {System.out.println("[WARNING] Neighbour "+ip+" offline!");}
 			}
 
-			// Send initial probe to all neighbors
+			// Send initial probe to all neighbours
 			for (Socket s : this.connections.values()) {
 				this.topology.writeToSocket(s);
 				System.out.println("[DEBUG] Probed "+s.getInetAddress().toString());
 			}
 
 
-
-			// Control thread for each neighbor (TODO: Método para isto)
-
+			// Control thread for each neighbour
 			for (Socket s : this.connections.values())
-				new Thread(() -> { try {
-
-					final Socket thread_socket = s;
-				
-					// Create buffer for control packets
-					byte[] ctrl_buffer = new byte[20000];
-					DatagramPacket ctrl_packet = new DatagramPacket(ctrl_buffer, ctrl_buffer.length);
-
-					// Listen for responses and process
-					while (true) {
-
-						// Read graph
-						/*Graph other = Graph.readFromSocket(thread_socket);
-						System.out.println("[DEBUG] Received topology from "+s.getInetAddress().toString());
-
-						// Merge with our current topology and check for changes
-						boolean changed = this.topology.merge(other);
-						System.out.println("[DEBUG] Topology from "+s.getInetAddress().toString()+" merged, with"+(changed?"":"out")+" changes");
-						if(!changed) continue;
-
-						// Spread new topology if changed
-						for (Socket out : this.connections.values()) {	
-							this.topology.writeToSocket(out);
-							System.out.println("[DEBUG] Sent new topology from "+s.getInetAddress().toString()+" to "+out.getInetAddress().toString());
-						}*/
-
-					}
-
-					} catch (Exception e) {
-						System.out.println("[ERROR] Control thread for neighbor "+s.getInetAddress().toString()+" crashed!");
-						System.out.println(e);
-						System.exit(-1);
-					}
-				}).start();
+				newNeighbourThread(s).start();
 
 
-
-				// Control thread for server socket (TODO: Método para isto)
-				new Thread(() -> { try {
-
-					while(true) {
-						
-						Socket new_socket = socket_control.accept();
-						String ip = new_socket.getInetAddress().toString();
-
-						// New neighbor:
-						if (!this.neighborsIP.contains(ip)) {
-							System.out.println("[INFO] New neighbor: "+ip);
-							this.neighborsIP.add(ip);
-							this.connections.put(ip,new_socket);
-							this.topology.addVertex(ip);
-							this.topology.addEdge(self_ip, ip);
-							System.out.println("[DEBUG] Topology:\n"+topology.toString());
-							// TODO: Start new thread for neighbor
-						}
-					}
-					
-
-					} catch (Exception e) {
-						System.out.println("[ERROR] Control thread crashed!");
-						System.out.println(e);
-						System.exit(-1);
-					}
-				}).start();
-
-
-
+			// Control thread for server socket
+			newControlThread().start();
 
 
 			// Data thread
-
-            new Thread(() -> { try {
-
-				// Create buffer for data packets
-				byte[] data_buffer = new byte[20000];
-				DatagramPacket data_packet = new DatagramPacket(data_buffer, data_buffer.length);
-
-				while (true) {
-
-					// Receive data packet
-					socket_data.receive(data_packet);
-					byte[] data = data_packet.getData();
-
-					// Add neighbor if not already a neighbor (TODO: Método para isto, ou então ignorar pacotes de hosts desconhecidos)
-					String incoming_ip = data_packet.getAddress().toString();
-					//if(this.neighborsIP.contains(incoming_ip)) this.neighborsIP.add(incoming_ip);
-					//if(this.neighborsIP.contains(incoming_ip)) continue;
-					
-					//System.out.println("[DEBUG] Received data from "+incoming_ip);
-
-					// Flood neighbors
-					for (String ip : this.neighborsIP) {
-
-						// (except the one who sent packet)
-						if(ip.equals(incoming_ip)) continue;
-
-						DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
-						socket_data.send(out_packet);
-						//System.out.println("[DEBUG] Sent data to "+ip);
-					}
-				}
-
-				} catch (Exception e) {
-					System.out.println("[ERROR] Data thread crashed!");
-					System.out.println(e);
-					System.exit(-1);
-				}
-            }).start();
-
-
-
+            newDataThread().start();
 
 
         } catch (Exception e) {
@@ -193,6 +91,167 @@ public class ONode {
 			System.exit(-1);
         }
     }
+
+	
+
+
+
+	private Thread newNeighbourThread(Socket s) {
+		return new Thread(() -> { try {
+
+			final Socket thread_socket = s;
+		
+			// Create buffer for control packets
+			byte[] ctrl_buffer = new byte[20000];
+			DatagramPacket ctrl_packet = new DatagramPacket(ctrl_buffer, ctrl_buffer.length);
+
+			// Listen for responses and process
+			while (true) {
+
+				// Read graph
+				/*Graph other = Graph.readFromSocket(thread_socket);
+				System.out.println("[DEBUG] Received topology from "+s.getInetAddress().toString());
+
+				// If equal, do nothing
+				if(this.topology.equals(other)) continue;
+
+				// Merge with our current topology and check for changes
+				boolean changed = this.topology.merge(other);
+				System.out.println("[DEBUG] Topology from "+s.getInetAddress().toString()+" merged, with"+(changed?"":"out")+" changes");
+				
+
+				if(!changed) {
+					
+					// If not changed, reply with our own topology
+					this.topology.writeToSocket(thread_socket);
+					System.out.println("[DEBUG] Sent new topology from "+s.getInetAddress().toString()+" to "+thread_socket.getInetAddress().toString());
+
+				} else {
+
+					// Spread new topology if changed
+					for (Socket out : this.connections.values()) {
+						this.topology.writeToSocket(out);
+						System.out.println("[DEBUG] Sent new topology from "+s.getInetAddress().toString()+" to "+out.getInetAddress().toString());
+					}
+
+				}*/
+
+			}
+
+			} catch (Exception e) {
+				System.out.println("[ERROR] Control thread for neighbour "+s.getInetAddress().toString()+" crashed!");
+				System.out.println(e);
+				System.exit(-1);
+			}
+		});
+	}
+
+
+
+	private Thread newControlThread() {
+		return new Thread(() -> { try {
+
+			while(true) {
+				
+				Socket new_socket = socket_control.accept();
+				String ip = new_socket.getInetAddress().toString();
+
+				// New neighbour:
+				if (!this.neighboursIP.contains(ip)) {
+					System.out.println("[INFO] New neighbour: "+ip);
+					this.neighboursIP.add(ip);
+					this.connections.put(ip,new_socket);
+					this.topology.addVertex(ip);
+					this.topology.addEdge(self_ip, ip);
+					System.out.println("[DEBUG] Topology:\n"+topology.toString());
+					newNeighbourThread(new_socket).start();;
+				}
+			}
+			
+
+			} catch (Exception e) {
+				System.out.println("[ERROR] Control thread crashed!");
+				System.out.println(e);
+				System.exit(-1);
+			}
+		});
+	}
+
+
+
+	private Thread newDataThread() {
+		return new Thread(() -> { try {
+
+			// Create buffer for data packets
+			byte[] data_buffer = new byte[20000];
+			DatagramPacket data_packet = new DatagramPacket(data_buffer, data_buffer.length);
+
+			while (true) {
+
+				// Receive data packet
+				socket_data.receive(data_packet);
+				byte[] data = data_packet.getData();
+
+				// Add neighbour if not already a neighbour (TODO: Método para isto, ou então ignorar pacotes de hosts desconhecidos)
+				String incoming_ip = data_packet.getAddress().toString();
+				//if(this.neighboursIP.contains(incoming_ip)) this.neighboursIP.add(incoming_ip);
+				//if(this.neighboursIP.contains(incoming_ip)) continue;
+				
+				//System.out.println("[DEBUG] Received data from "+incoming_ip);
+
+				// Flood neighbours
+				for (String ip : this.neighboursIP) {
+
+					// (except the one who sent packet)
+					if(ip.equals(incoming_ip)) continue;
+
+					DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
+					socket_data.send(out_packet);
+					//System.out.println("[DEBUG] Sent data to "+ip);
+				}
+			}
+
+			} catch (Exception e) {
+				System.out.println("[ERROR] Data thread crashed!");
+				System.out.println(e);
+				System.exit(-1);
+			}
+		});
+	}
+
+
+
+	// Thanks, stackoverflow
+	private String getPublicIpAddress() {
+		String res = null;
+		try {
+			String localhost = InetAddress.getLocalHost().getHostAddress();
+			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+			while (e.hasMoreElements()) {
+				NetworkInterface ni = (NetworkInterface) e.nextElement();
+				if(ni.isLoopback())
+					continue;
+				if(ni.isPointToPoint())
+					continue;
+				Enumeration<InetAddress> addresses = ni.getInetAddresses();
+				while(addresses.hasMoreElements()) {
+					InetAddress address = (InetAddress) addresses.nextElement();
+					if(address instanceof Inet4Address) {
+						String ip = address.getHostAddress();
+						if(!ip.equals(localhost))
+							System.out.println((res = ip));
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return res;
+	}
+
+
+
+
 
     public static void main(String[] args) {
         new ONode(args);
