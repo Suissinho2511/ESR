@@ -5,9 +5,11 @@ import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -18,40 +20,131 @@ import java.util.Set;
 
 public class ONode {
 
-    private String neighborsIP[]; // neighbor ip
+    private List<String> neighborsIP;
+	private Map<String,Socket> connections; // Sockets to neighbors
 	private Graph topology;
+
 
     public ONode(String ips[]) {
 
-        this.neighborsIP = ips;
-
+        this.neighborsIP = Arrays.asList(ips);
 
 		// Start building overlay topology
-		String self_ip = "self";
-		try {self_ip = InetAddress.getLocalHost().toString(); topology.addVertex(self_ip);} catch (UnknownHostException ignore) {}
-		for (String ip : neighborsIP) {
-			topology.addVertex(ip);
-			topology.addEdge(self_ip, ip);
+		final String self_ip;
+		try {self_ip = InetAddress.getLocalHost().toString(); this.topology.addVertex(self_ip);} catch (UnknownHostException ignore) {self_ip = "self";}
+		for (String ip : this.neighborsIP) {
+			this.topology.addVertex(ip);
+			this.topology.addEdge(self_ip, ip);
 		}
 
 
 
         try {
-            DatagramSocket socket_data = new DatagramSocket(5000);
-            DatagramSocket socket_control = new DatagramSocket(5001);
+
+			// Listen for UDP traffic on port 5000 - Data
+			DatagramSocket socket_data = new DatagramSocket(5000);
+			
+			// Listen for TCP connections on port 5001 - Control
+			ServerSocket socket_control = new ServerSocket(5001);
+
+			// Connect to neighbors
+			this.connections = new HashMap<String,Socket>(this.neighborsIP.size());
+			for (String ip : this.neighborsIP) {
+				Socket s = new Socket(ip, 5001);
+				this.connections.put(self_ip, s);
+			}
+
+			// Send initial probe to all neighbors
+			for (Socket s : this.connections.values())
+				this.topology.writeToSocket(s);
+
+
+
+			// Control thread for each neighbor (TODO: Método para isto)
+
+			for (Socket s : this.connections.values())
+				new Thread(() -> { try {
+
+					final Socket thread_socket = s;
+				
+					// Create buffer for control packets
+					byte[] ctrl_buffer = new byte[20000];
+					DatagramPacket ctrl_packet = new DatagramPacket(ctrl_buffer, ctrl_buffer.length);
+
+					// Listen for responses and process
+					while (true) {
+
+						// Read graph
+						Graph other = Graph.readFromSocket(thread_socket);
+
+						// Merge with our current topology and check for changes
+						boolean changed = this.topology.merge(other);
+						if(!changed) continue;
+
+						// Spread new topology if changed
+						for (Socket out : this.connections.values())
+							this.topology.writeToSocket(out);
+
+					}
+
+					} catch (Exception e) {
+						System.out.println(e);
+						System.exit(-1);
+					}
+				}).start();
+
+
+
+				// Control thread for server socket (TODO: Método para isto)
+				new Thread(() -> { try {
+
+					Socket new_socket = socket_control.accept();
+					String ip = new_socket.getInetAddress().toString();
+
+					// New neighbor:
+					if (!this.neighborsIP.contains(ip)) {
+						this.neighborsIP.add(ip);
+						this.connections.put(ip,new_socket);
+						this.topology.addVertex(ip);
+						this.topology.addEdge(self_ip, ip);
+						// TODO: Start new thread for neighbor
+					}
+					
+
+					} catch (Exception e) {
+						System.out.println(e);
+						System.exit(-1);
+					}
+				}).start();
+
+
+
+
 
 			// Data thread
 
             new Thread(() -> { try {
 
+				// Create buffer for data packets
 				byte[] data_buffer = new byte[20000];
 				DatagramPacket data_packet = new DatagramPacket(data_buffer, data_buffer.length);
 
 				while (true) {
+
+					// Receive data packet
 					socket_data.receive(data_packet);
 					byte[] data = data_packet.getData();
+
+					// Add neighbor if not already a neighbor (TODO: Método para isto, ou então ignorar pacotes de hosts desconhecidos)
+					String incoming_ip = data_packet.getAddress().toString();
+					if(neighborsIP.contains(incoming_ip)) neighborsIP.add(incoming_ip);
+
+					// Flood neighbors
 					for (String ip : neighborsIP) {
-						if(ip.equals(data_packet.getAddress().toString())) continue;
+
+						// (except the one who sent packet)
+						if(ip.equals(incoming_ip)) continue;
+
 						DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5000);
 						socket_data.send(out_packet);
 					}
@@ -59,50 +152,17 @@ public class ONode {
 
 				} catch (Exception e) {
 					System.out.println(e);
-					socket_data.close();
-					socket_control.close();
 					System.exit(-1);
 				}
             }).start();
 
 
 
-			// Control thread
 
-            new Thread(() -> { try {
-			
-				byte[] ctrl_buffer = new byte[20000];
-				DatagramPacket ctrl_packet = new DatagramPacket(ctrl_buffer, ctrl_buffer.length);
-
-				// Send initial probe request
-				//Graph.writeToSocket(null, topology);
-
-				while (true) {
-					socket_control.receive(ctrl_packet);
-					byte[] data = ctrl_packet.getData();
-
-					// TODO: é preciso usar TCP aqui
-					//Graph other = Graph.readFromSocket(null);
-					//boolean changed = topology.merge(other));
-					//if(!changed) continue;
-					//Graph.writeToSocket(null, topology);
-
-					for (String ip : neighborsIP) {
-						DatagramPacket out_packet = new DatagramPacket(data, data.length, InetAddress.getByName(ip), 5001);
-						socket_control.send(out_packet);
-					}
-				}
-
-				} catch (Exception e) {
-					System.out.println(e);
-					socket_data.close();
-					socket_control.close();
-					System.exit(-1);
-				}
-            }).start();
 
         } catch (Exception e) {
             System.out.println(e);
+			System.exit(-1);
         }
     }
 
@@ -222,9 +282,9 @@ class Graph implements Serializable {
 		return g;
 	}
 
-	public static void writeToSocket(Socket s, Graph g) throws IOException {
+	public void writeToSocket(Socket s) throws IOException {
 		ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
-        out.writeObject(g);
+        out.writeObject(this);
         out.close();
 	}
 }
