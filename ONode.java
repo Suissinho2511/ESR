@@ -1,4 +1,5 @@
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
@@ -8,26 +9,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public class ONode {
 
     private List<InetAddress> neighboursIP;
-	private Map<InetAddress,Socket> connections;
+	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
 	private ServerSocket socket_control;
 
 
     public ONode(String ips[]) {
 
-		//this.neighboursIP = new ArrayList<>();
-		//this.neighboursIP.addAll(Arrays.asList(ips));
-
 		// String to INetAddress
-		//this.neighboursIP = new ArrayList<>();
 		this.neighboursIP = Arrays.asList(ips).stream().map((name) -> {
 			try {
 				return InetAddress.getByName(name);
@@ -36,7 +33,7 @@ public class ONode {
 			}
 		}).collect(Collectors.toList());
 
-		System.out.println("[DEBUG] Neighbours:\n"+this.neighboursIP.toString());
+		System.out.println("[INFO] Neighbours:\n"+this.neighboursIP.toString());
 
 
 
@@ -51,13 +48,11 @@ public class ONode {
 			System.out.println("[INFO] Control server socket created");
 
 			// Connect to neighbours
-			this.connections = new HashMap<InetAddress,Socket>();
 			for (InetAddress ip : this.neighboursIP) {
 				try {
-					Socket s = new Socket(ip, 5001);
-					this.connections.put(ip, s);
+					sendCtrlMessage(ip, "Hello!");
 					System.out.println("[INFO] Connected to neighbour "+ip.toString());
-				} catch (Exception offline) {System.out.println("[WARNING] Neighbour "+ip.toString()+" offline! (Ignore if it's an endpoint)");}
+				} catch (Exception offline) {System.out.println("[WARNING] Neighbour "+ip.toString()+" offline! (May be an endpoint)");}
 			}
 
 
@@ -70,12 +65,6 @@ public class ONode {
 			// Data thread
             newDataThread().start();
 			System.out.println("[INFO] Data thread started");
-
-
-			// Control thread for each neighbour
-			for (Socket s : this.connections.values())
-				newNeighbourThread(s).start();
-			System.out.println("[INFO] Neighbour threads started");
 
 
 
@@ -92,36 +81,28 @@ public class ONode {
 
 	private Thread newNeighbourThread(Socket s) {
 		return new Thread(() -> { try {
-
-			//final Socket thread_socket = s;
 		
-			// Create buffer for control packets
+			// Create buffer for control packet
 			byte[] ctrl_buffer = new byte[20000];
 			DatagramPacket ctrl_packet = new DatagramPacket(ctrl_buffer, ctrl_buffer.length);
 
 
-			// Send initial probe to neighbour
-			//OutputStream out = s.getOutputStream();
-			//out.write("Hello!".getBytes());
-			//out.flush();
-			//out.close();
-			System.out.println("[DEBUG] Probed "+s.getInetAddress().toString());
+			// Process
+			InputStream in = s.getInputStream();
+			String str = new String(in.readAllBytes());
+			System.out.println("[DEBUG] Received control message from "+s.getInetAddress().toString()+":\n" + str);
+			in.close();
 
 
-			// Listen for responses and process
-			while (true) {
-
-				//InputStream in = s.getInputStream();
-				//String str = new String(in.readAllBytes());
-				//System.out.println("[DEBUG] Received control message from "+s.getInetAddress().toString()+":\n" + str);
-				//in.close();
-
-			}
 
 			} catch (Exception e) {
 				System.out.println("[ERROR] Control thread for neighbour "+s.getInetAddress().toString()+" crashed!");
 				System.out.println(e);
-				System.exit(-1);
+
+				this.neighbourIP_lock.writeLock().lock();
+				this.neighboursIP.remove(s.getInetAddress());
+				this.neighbourIP_lock.writeLock().unlock();
+				//System.exit(-1);
 			}
 		});
 	}
@@ -137,13 +118,15 @@ public class ONode {
 				InetAddress ip = new_socket.getInetAddress();
 
 				// New neighbour:
-				if (!this.neighboursIP.contains(ip)) {
+				if (!isNeighbour(ip)) {
 					System.out.println("[INFO] New neighbour: "+ip.toString());
-					this.neighboursIP.add(ip);
-					this.connections.put(ip,new_socket);
+					addNeighbour(ip);
 					System.out.println("[DEBUG] Neighbours:\n"+neighboursIP.toString());
-					newNeighbourThread(new_socket).start();;
+					sendCtrlMessage(ip, "Hello!");
 				}
+
+				// Process
+				newNeighbourThread(new_socket).start();
 			}
 			
 
@@ -171,12 +154,13 @@ public class ONode {
 
 				// Ignore data packets from unknown sources
 				InetAddress incoming_ip = data_packet.getAddress();
-				if(!this.neighboursIP.contains(incoming_ip)) continue;
+				if(!isNeighbour(incoming_ip)) continue;
 				
 				byte[] data = data_packet.getData();
 				//System.out.println("[DEBUG] Received data from "+incoming_ip);
 
 				// Flood neighbours
+				this.neighbourIP_lock.readLock().lock();
 				for (InetAddress ip : this.neighboursIP) {
 
 					// (except the one who sent packet)
@@ -186,6 +170,7 @@ public class ONode {
 					socket_data.send(out_packet);
 					//System.out.println("[DEBUG] Sent data to "+ip);
 				}
+				this.neighbourIP_lock.readLock().unlock();
 			}
 
 			} catch (Exception e) {
@@ -194,6 +179,32 @@ public class ONode {
 				System.exit(-1);
 			}
 		});
+	}
+
+
+
+
+
+
+	private void sendCtrlMessage(InetAddress ip, String message) throws IOException {
+		Socket s = new Socket(ip, 5001);
+		OutputStream out = s.getOutputStream();
+		out.write(message.getBytes());
+		out.flush();
+		s.close();
+	}
+
+	private void addNeighbour(InetAddress ip) {
+		this.neighbourIP_lock.writeLock().lock();
+		this.neighboursIP.add(ip);
+		this.neighbourIP_lock.writeLock().unlock();
+	}
+
+	private boolean isNeighbour(InetAddress ip) {
+		this.neighbourIP_lock.readLock().lock();
+		boolean result = this.neighboursIP.contains(ip);
+		this.neighbourIP_lock.readLock().unlock();
+		return result;
 	}
 
 
