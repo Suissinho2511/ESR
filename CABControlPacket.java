@@ -1,4 +1,7 @@
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -8,31 +11,37 @@ import java.nio.ByteBuffer;
 
 
 public class CABControlPacket extends CABPacket {
-	
+
     private int availableJumps;
+    private int currentJumps;
     private LinkedHashMap<InetAddress, Long> path;
 
 	
 
-    public CABControlPacket(int type, int maxJumps, InetAddress currAddress, Long timestamp) {
-        this.type = type;
+    public CABControlPacket(int maxJumps, InetAddress currAddress, Long timestamp) {
+        this.type = 0;
         this.availableJumps = maxJumps;
+		this.currentJumps = 0;
         this.path = new LinkedHashMap<>();
         this.path.put(currAddress, timestamp);
     }
 
-    public CABControlPacket(DatagramPacket packet) {
-        byte[] payload = packet.getData();
+    public CABControlPacket(DataInputStream in) throws IOException {
 
-        type = ByteBuffer.wrap(payload).getInt();
-        availableJumps = ByteBuffer.wrap(payload).getInt();
+        type = in.readInt();
+        availableJumps = in.readInt();
+		currentJumps = in.readInt();
 
-        /*while (ByteBuffer.wrap(payload).naochegouFinal)
+        for(int i = 0; i < currentJumps; i++)
         {
-            InetAddress add = InetAddress.getByAddress(ByteBuffer.wrap(payload));
-            Long time = ByteBuffer.wrap(payload).getLong();
+			String ip = in.readUTF();
+			Long time = in.readLong();
+
+            InetAddress add = InetAddress.getByAddress(ip.getBytes());
             path.put(add, time);
-        }*/
+        }
+
+		in.close();
     }
     
 
@@ -56,6 +65,7 @@ public class CABControlPacket extends CABPacket {
     public void addNode(InetAddress ip) {
         path.put(ip, System.currentTimeMillis());
         availableJumps--;
+		currentJumps++;
     }
 
     public long getDelay() {
@@ -71,26 +81,15 @@ public class CABControlPacket extends CABPacket {
     }
 
 
-	
-/* Inspiração:
-	public static Graph readFromSocket(Socket s) throws IOException, ClassNotFoundException {
-		DataInputStream ind = new DataInputStream(new BufferedInputStream(s.getInputStream()));
-		BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-
-		ObjectInputStream in = new ObjectInputStream(s.getInputStream());
-		Graph g = (Graph) in.readObject();
-		in.close();
-		return g;
-	}
-
-	public void writeToSocket(Socket s) throws IOException {
-		DataOutputStream outd = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
-		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()));
-
-		ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
-        out.writeObject(this);
+	public void write(DataOutputStream out) throws IOException {
+		out.writeInt(type);
+		out.writeInt(availableJumps);
+		out.writeInt(currentJumps);
+		for(Entry<InetAddress, Long> entry : path.entrySet()) {
+			out.writeUTF(entry.getKey().toString());
+			out.writeUTF(entry.getValue().toString());
+		}
 		out.flush();
-        out.close();
+		out.close();
 	}
-*/
 }
