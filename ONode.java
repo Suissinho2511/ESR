@@ -1,6 +1,14 @@
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -383,6 +391,9 @@ class Graph implements Serializable {
 	}
 
 	public static Graph readFromSocket(Socket s) throws IOException, ClassNotFoundException {
+		DataInputStream ind = new DataInputStream(new BufferedInputStream(s.getInputStream()));
+		BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+
 		ObjectInputStream in = new ObjectInputStream(s.getInputStream());
 		Graph g = (Graph) in.readObject();
 		in.close();
@@ -390,8 +401,12 @@ class Graph implements Serializable {
 	}
 
 	public void writeToSocket(Socket s) throws IOException {
+		DataOutputStream outd = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()));
+
 		ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
         out.writeObject(this);
+		out.flush();
         out.close();
 	}
 
