@@ -69,4 +69,28 @@ public class CABControlPacket extends CABPacket {
     public String[] getPath() {
         return path.keySet().stream().map(InetAddress::getHostAddress).toArray(String[]::new);
     }
+
+
+	
+/* Inspiração:
+	public static Graph readFromSocket(Socket s) throws IOException, ClassNotFoundException {
+		DataInputStream ind = new DataInputStream(new BufferedInputStream(s.getInputStream()));
+		BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+
+		ObjectInputStream in = new ObjectInputStream(s.getInputStream());
+		Graph g = (Graph) in.readObject();
+		in.close();
+		return g;
+	}
+
+	public void writeToSocket(Socket s) throws IOException {
+		DataOutputStream outd = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(s.getOutputStream()));
+
+		ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
+        out.writeObject(this);
+		out.flush();
+        out.close();
+	}
+*/
 }
