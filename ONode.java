@@ -1,4 +1,6 @@
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,7 +52,7 @@ public class ONode {
 			// Connect to neighbours
 			for (InetAddress ip : this.neighboursIP) {
 				try {
-					sendCtrlMessage(ip, "Hello!");
+					sendPing(ip, "Hello!");
 					System.out.println("[INFO] Connected to neighbour "+ip.toString());
 				} catch (Exception offline) {System.out.println("[WARNING] Neighbour "+ip.toString()+" offline! (May be an endpoint)");}
 			}
@@ -88,9 +90,42 @@ public class ONode {
 
 
 			// Process
-			InputStream in = s.getInputStream();
-			String str = new String(in.readAllBytes());
-			System.out.println("[DEBUG] Received control message from "+s.getInetAddress().toString()+":\n" + str);
+			DataInputStream in = new DataInputStream(s.getInputStream());
+			CABPacket cabp = new CABPacket();
+			cabp.read(in);
+
+
+			switch (cabp.type) {
+
+				case 0:
+					// Hello
+					CABHelloPacket cabp_h = new CABHelloPacket(in);
+					String str = cabp_h.getMessage();
+					System.out.println("[DEBUG] Received ping message from "+s.getInetAddress().toString()+":\n" + str);
+					break;
+				
+				case 1:
+					// Probe path
+					CABControlPacket cabp_c = new CABControlPacket(in);
+					// TODO: Verificar availableJumps e assim
+					cabp_c.addNode(s.getLocalAddress());
+					// TODO: Spread packet
+					System.out.println("[DEBUG] Received probe path request from "+s.getInetAddress().toString()+". Spreading...");
+					break;
+				
+				case 2:
+					// Reply path
+					cabp_c = new CABControlPacket(in);
+					// TODO: retornar à origem
+					System.out.println("[DEBUG] Received path from "+s.getInetAddress().toString()+". Returning to origin...");
+					break;
+
+				default:
+					System.out.println("[DEBUG] Received unknown message from "+s.getInetAddress().toString());
+					break;
+			}
+
+
 			in.close();
 
 
@@ -122,7 +157,7 @@ public class ONode {
 					System.out.println("[INFO] New neighbour: "+ip.toString());
 					addNeighbour(ip);
 					System.out.println("[DEBUG] Neighbours:\n"+neighboursIP.toString());
-					sendCtrlMessage(ip, "Hello!");
+					sendPing(ip, "Hello!");
 				}
 
 				// Process
@@ -186,11 +221,11 @@ public class ONode {
 
 
 
-	private void sendCtrlMessage(InetAddress ip, String message) throws IOException {
+	private void sendPing(InetAddress ip, String message) throws IOException {
 		Socket s = new Socket(ip, 5001);
-		OutputStream out = s.getOutputStream();
-		out.write(message.getBytes());
-		out.flush();
+		DataOutputStream out = new DataOutputStream(s.getOutputStream());
+		new CABHelloPacket(message).write(out);
+		out.close();
 		s.close();
 	}
 

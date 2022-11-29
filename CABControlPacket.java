@@ -3,11 +3,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
-import java.nio.ByteBuffer;
 
 
 public class CABControlPacket extends CABPacket {
@@ -19,7 +17,7 @@ public class CABControlPacket extends CABPacket {
 	
 
     public CABControlPacket(int maxJumps, InetAddress currAddress, Long timestamp) {
-        this.type = 0;
+        this.type = 1;
         this.availableJumps = maxJumps;
 		this.currentJumps = 0;
         this.path = new LinkedHashMap<>();
@@ -28,7 +26,6 @@ public class CABControlPacket extends CABPacket {
 
     public CABControlPacket(DataInputStream in) throws IOException {
 
-        type = in.readInt();
         availableJumps = in.readInt();
 		currentJumps = in.readInt();
 
@@ -40,8 +37,6 @@ public class CABControlPacket extends CABPacket {
             InetAddress add = InetAddress.getByAddress(ip.getBytes());
             path.put(add, time);
         }
-
-		in.close();
     }
     
 
@@ -81,8 +76,9 @@ public class CABControlPacket extends CABPacket {
     }
 
 
+
 	public void write(DataOutputStream out) throws IOException {
-		out.writeInt(type);
+		super.write(out);
 		out.writeInt(availableJumps);
 		out.writeInt(currentJumps);
 		for(Entry<InetAddress, Long> entry : path.entrySet()) {
@@ -90,6 +86,5 @@ public class CABControlPacket extends CABPacket {
 			out.writeUTF(entry.getValue().toString());
 		}
 		out.flush();
-		out.close();
 	}
 }
