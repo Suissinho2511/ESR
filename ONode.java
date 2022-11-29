@@ -277,6 +277,8 @@ class Graph {
 		//public List<Edge> interfaces;
 		//public List<Vertex> adjVertices;
 
+		public boolean isEndpoint;
+
 		public Vertex(String label) {this.label = label;}
 	}
 
@@ -287,10 +289,11 @@ class Graph {
 		public final InetAddress ifrom;
 		public final InetAddress ito;
 
-		public Float cost;
+		public Float delay;
+		public boolean isActive;
 
 		public Edge(Vertex from, Vertex to, InetAddress ifrom, InetAddress ito) {this.from = from; this.to = to; this.ifrom = ifrom; this.ito = ito;}
-		public Edge(Vertex from, Vertex to, InetAddress ifrom, InetAddress ito, Float cost) {this(from,to,ifrom,ito); this.cost = cost;}
+		public Edge(Vertex from, Vertex to, InetAddress ifrom, InetAddress ito, Float delay) {this(from,to,ifrom,ito); this.delay = delay;}
 	}
 
 	private final Map<String, List<String>> adjVertices = new HashMap<>();
