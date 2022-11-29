@@ -10,8 +10,15 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -249,4 +256,156 @@ public class ONode {
     public static void main(String[] args) {
         new ONode(args);
     }
+}
+
+
+
+
+
+
+
+
+
+
+class Graph {
+
+	//TODO: Adaptar para incluir delays e ter isso em consideração no pathfinding
+
+	private class Vertex {
+		public final String label;
+		//public List<InetAddress> interfaces;
+		//public List<Edge> interfaces;
+		//public List<Vertex> adjVertices;
+
+		public Vertex(String label) {this.label = label;}
+	}
+
+	private class Edge {
+		public final Vertex from;
+		public final Vertex to;
+
+		public final InetAddress ifrom;
+		public final InetAddress ito;
+
+		public Float cost;
+
+		public Edge(Vertex from, Vertex to, InetAddress ifrom, InetAddress ito) {this.from = from; this.to = to; this.ifrom = ifrom; this.ito = ito;}
+		public Edge(Vertex from, Vertex to, InetAddress ifrom, InetAddress ito, Float cost) {this(from,to,ifrom,ito); this.cost = cost;}
+	}
+
+	private final Map<String, List<String>> adjVertices = new HashMap<>();
+
+	public void addVertex(String label) {
+		adjVertices.putIfAbsent(label, new ArrayList<>());
+	}
+
+	public void removeVertex(String label) {
+		adjVertices.values().forEach(e -> e.remove(label));
+		adjVertices.remove(label);
+	}
+
+	public void addEdge(String label1, String label2) {
+		if(!adjVertices.containsKey(label1)) addVertex(label1);
+		if(!adjVertices.containsKey(label2)) addVertex(label2);
+		adjVertices.get(label1).add(label2);
+	}
+
+	public void removeEdge(String label1, String label2) {
+		List<String> eV1 = adjVertices.get(label1);
+		List<String> eV2 = adjVertices.get(label2);
+		if (eV1 != null)
+			eV1.remove(label2);
+		if (eV2 != null)
+			eV2.remove(label1);
+	}
+
+	public List<String> breadthFirst(String origem, String destino) {
+		Set<String> visited = new LinkedHashSet<>();
+		Queue<List<String>> queue = new LinkedList<>();
+
+		List<String> first_node = new ArrayList<>();
+		first_node.add(origem);
+
+		queue.add(first_node);
+		visited.add(origem);
+
+		while (!queue.isEmpty()) {
+			List<String> path = queue.poll();
+			String vertex = path.get(path.size()-1);
+
+			if(vertex.equals(destino)) return path;
+
+			for (String v : this.getAdjVertices(vertex)) {
+				if (!visited.contains(v)) {
+					List<String> new_path = new ArrayList<>(path);
+					new_path.add(v);
+
+					queue.add(new_path);
+					visited.add(v);
+				}
+			}
+		}
+		//return visited.stream().toList();
+		return new ArrayList<>(visited);
+	}
+
+	public List<String> getAdjVertices(String label) {
+		return adjVertices.getOrDefault(label, null);
+	}
+
+	public Set<String> getNodes() {
+		return adjVertices.keySet();
+	}
+
+	public boolean equals(Graph other) {
+
+		for (String node : other.getNodes())
+			if(!this.getNodes().contains(node)) return false;
+			
+		for (String node : this.getNodes())
+			if(!other.getNodes().contains(node)) return false;
+
+		for (String from : other.getNodes())
+			for (String to : other.getAdjVertices(from))
+				if(!this.getAdjVertices(from).contains(to)) return false;
+				
+		for (String from : this.getNodes())
+			for (String to : this.getAdjVertices(from))
+				if(!other.getAdjVertices(from).contains(to)) return false;
+
+		return true;
+	}
+
+	public boolean merge(Graph other) {
+		boolean result = false; //were there changes
+
+		// check nodes first
+		for(String other_node : other.getNodes())
+			if(!this.getNodes().contains(other_node)) {
+				this.addVertex(other_node);
+				result = true;
+			}
+
+		// now check vertices
+		for(String other_node : other.getNodes())
+			for(String adj : other.getAdjVertices(other_node))
+				if(!this.getAdjVertices(other_node).contains(adj)) {
+					this.addEdge(other_node, adj);
+					result = true;
+				}
+
+		return result;
+	}
+
+
+	@Override
+	public String toString() {
+		StringBuilder str = new StringBuilder();
+
+		for (String from : this.getNodes())
+			for (String to : this.getAdjVertices(from))
+				str.append(from+'-'+to+'\n');
+
+		return str.toString();
+	}
 }
