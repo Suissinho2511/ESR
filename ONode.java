@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
 
 public class ONode {
 
+	private String mylabel = idGenerator(16);
+	private Graph topology = new Graph();
+
     private List<InetAddress> neighboursIP;
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
@@ -33,9 +36,13 @@ public class ONode {
 
     public ONode(String ips[]) {
 
+		// Start topology
+		topology.addVertex(mylabel);
+
 		// String to INetAddress
 		this.neighboursIP = Arrays.asList(ips).stream().map((name) -> {
 			try {
+				topology.addEdge(mylabel, name);
 				return InetAddress.getByName(name);
 			} catch (UnknownHostException e1) {
 				return null;
@@ -43,6 +50,8 @@ public class ONode {
 		}).collect(Collectors.toList());
 
 		System.out.println("[INFO] Neighbours:\n"+this.neighboursIP.toString());
+		System.out.println("[INFO] Topology:\n"+this.topology.toString());
+
 
 
 
@@ -90,11 +99,6 @@ public class ONode {
 
 	private Thread newNeighbourThread(Socket s) {
 		return new Thread(() -> { try {
-		
-			// Create buffer for control packet
-			byte[] ctrl_buffer = new byte[20000];
-			DatagramPacket ctrl_packet = new DatagramPacket(ctrl_buffer, ctrl_buffer.length);
-
 
 			// Process
 			DataInputStream in = new DataInputStream(s.getInputStream());
@@ -163,7 +167,8 @@ public class ONode {
 				if (!isNeighbour(ip)) {
 					System.out.println("[INFO] New neighbour: "+ip.toString());
 					addNeighbour(ip);
-					System.out.println("[DEBUG] Neighbours:\n"+neighboursIP.toString());
+					System.out.println("[DEBUG] Neighbours:\n"+neighboursIP.toString());		System.out.println("[INFO] Topology:\n"+this.topology.toString());
+					System.out.println("[INFO] Topology:\n"+this.topology.toString());
 					sendPing(ip, "Hello!");
 				}
 
@@ -239,6 +244,7 @@ public class ONode {
 	private void addNeighbour(InetAddress ip) {
 		this.neighbourIP_lock.writeLock().lock();
 		this.neighboursIP.add(ip);
+		this.topology.addEdge(mylabel, ip.toString());
 		this.neighbourIP_lock.writeLock().unlock();
 	}
 
@@ -247,6 +253,19 @@ public class ONode {
 		boolean result = this.neighboursIP.contains(ip);
 		this.neighbourIP_lock.readLock().unlock();
 		return result;
+	}
+	
+	private String idGenerator(int n) {
+		String alphaNumeric = "0123456789" + "abcdefghijklmnopqrstuvxyz";
+
+		StringBuilder sb = new StringBuilder(n);
+		
+		for (int i = 0; i < n; i++) {
+			int index = (int)(alphaNumeric.length() * Math.random());
+			sb.append(alphaNumeric.charAt(index));
+		}
+
+		return sb.toString();
 	}
 
 
@@ -268,8 +287,6 @@ public class ONode {
 
 
 class Graph {
-
-	//TODO: Adaptar para incluir delays e ter isso em consideração no pathfinding
 
 	private class Vertex {
 		public final String label;
