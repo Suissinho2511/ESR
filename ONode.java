@@ -167,7 +167,7 @@ public class ONode {
 				if (!isNeighbour(ip)) {
 					System.out.println("[INFO] New neighbour: "+ip.toString());
 					addNeighbour(ip);
-					System.out.println("[DEBUG] Neighbours:\n"+neighboursIP.toString());		System.out.println("[INFO] Topology:\n"+this.topology.toString());
+					System.out.println("[DEBUG] Neighbours:\n"+neighboursIP.toString());
 					System.out.println("[INFO] Topology:\n"+this.topology.toString());
 					sendPing(ip, "Hello!");
 				}
