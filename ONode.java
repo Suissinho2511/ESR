@@ -1,9 +1,10 @@
+import CAB.CABPacket;
+import CAB.CABHelloPacket;
+import CAB.CABControlPacket;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -22,6 +23,8 @@ import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+
+
 
 public class ONode {
 
@@ -53,8 +56,6 @@ public class ONode {
 		System.out.println("[INFO] Topology:\n"+this.topology.toString());
 
 
-
-
         try {
 
 			// Listen for UDP traffic on port 5000 - Data
@@ -73,19 +74,13 @@ public class ONode {
 				} catch (Exception offline) {System.out.println("[WARNING] Neighbour "+ip.toString()+" offline! (May be an endpoint)");}
 			}
 
-
-
 			// Control thread for server socket
 			newControlThread().start();
 			System.out.println("[INFO] Control thread started");
-			
 
 			// Data thread
             newDataThread().start();
 			System.out.println("[INFO] Data thread started");
-
-
-
 
         } catch (Exception e) {
             System.out.println(e);
@@ -93,42 +88,53 @@ public class ONode {
         }
     }
 
-	
-
-
-
 	private Thread newNeighbourThread(Socket s) {
 		return new Thread(() -> { try {
 
 			// Process
 			DataInputStream in = new DataInputStream(s.getInputStream());
-			CABPacket cabp = new CABPacket();
-			cabp.read(in);
+			CABPacket packet = new CABPacket();
+			packet.read(in);
 
 
-			switch (cabp.type) {
+			switch (packet.type) {
 
-				case 0:
-					// Hello
-					CABHelloPacket cabp_h = new CABHelloPacket(in);
-					String str = cabp_h.getMessage();
-					System.out.println("[DEBUG] Received ping message from "+s.getInetAddress().toString()+":\n" + str);
+				case HELLO:
+					if (packet.message instanceof CABHelloPacket helloPacket){
+						String str = helloPacket.getMessage();
+						System.out.println("[DEBUG] Received ping message from "+s.getInetAddress().toString()+":\n" + str);
+					}
+					else{
+						System.out.println("Something's wrong with this HELLO packet");
+					}
 					break;
 				
-				case 1:
-					// Probe path
-					CABControlPacket cabp_c = new CABControlPacket(in);
-					// TODO: Verificar availableJumps e assim
-					cabp_c.addNode(s.getLocalAddress());
-					// TODO: Spread packet
-					System.out.println("[DEBUG] Received probe path request from "+s.getInetAddress().toString()+". Spreading...");
+				case PROBE_PATH:
+					if (packet.message instanceof CABControlPacket controlPacket &&
+						controlPacket.getAvailableJumps() > 0){
+
+						// TODO: Verificar availableJumps e assim
+						controlPacket.addNode(s.getLocalAddress());
+						// TODO: Spread packet
+						System.out.println("[DEBUG] Received probe path request from "+s.getInetAddress().toString()+". Spreading...");
+					}
+					else{
+						System.out.println("Something's wrong with this PROBE_PATH packet");
+					}
+
 					break;
 				
-				case 2:
+				case REPLY_PATH:
 					// Reply path
-					cabp_c = new CABControlPacket(in);
-					// TODO: retornar à origem
-					System.out.println("[DEBUG] Received path from "+s.getInetAddress().toString()+". Returning to origin...");
+					if (packet.message instanceof CABControlPacket controlPacket) {
+
+						// TODO: retornar à origem
+						System.out.println("[DEBUG] Received path from " + s.getInetAddress().toString() + ". Returning to origin...");
+					}
+					else{
+						System.out.println("Something's wrong with this REPLY_PATH packet");
+					}
+
 					break;
 
 				default:
