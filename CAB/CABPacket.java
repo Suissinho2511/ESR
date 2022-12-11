@@ -5,17 +5,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class CABPacket {
-    public MessageType type;
+	public MessageType type;
 	public Object message;
 
 	public CABPacket() {
 	}
 
-
-
 	public void read(DataInputStream in) throws IOException {
 		this.type = MessageType.fromInteger(in.readInt());
-		switch (type){
+		switch (type) {
 			case HELLO:
 				message = new CABHelloPacket(in);
 				break;
@@ -26,20 +24,19 @@ public class CABPacket {
 
 		}
 
-
-
 	}
 
 	public void write(DataOutputStream out) throws IOException {
 		out.writeInt(MessageType.toInteger(this.type));
-		switch (type){
+		switch (type) {
 			case HELLO:
-				if (message instanceof CABHelloPacket helloMessage){
+				if (message instanceof CABHelloPacket helloMessage) {
 					helloMessage.write(out);
 				}
 				break;
 			case PROBE_PATH:
-				if (message instanceof CABControlPacket controlMessage){
+			case REPLY_PATH:
+				if (message instanceof CABControlPacket controlMessage) {
 					controlMessage.write(out);
 				}
 				break;

@@ -10,7 +10,6 @@ public enum MessageType {
     // Say a description of how it works
     REPLY_PATH;
 
-
     public static MessageType fromInteger(int x) {
         return switch (x) {
             case 0 -> HELLO;

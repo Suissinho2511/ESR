@@ -8,18 +8,15 @@ import java.net.InetAddress;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-
-public class CABControlPacket extends CABPacket {
+public class CABControlPacket {
 
     private int availableJumps;
     private int currentJumps;
     private LinkedHashMap<InetAddress, Long> path;
 
-	
-
     public CABControlPacket(int maxJumps, InetAddress currAddress, Long timestamp) {
         this.availableJumps = maxJumps;
-		this.currentJumps = 0;
+        this.currentJumps = 0;
         this.path = new LinkedHashMap<>();
         this.path.put(currAddress, timestamp);
     }
@@ -27,15 +24,14 @@ public class CABControlPacket extends CABPacket {
     public CABControlPacket(DataInputStream in) throws IOException {
         read(in);
     }
-    
-
 
     public <K, V> Entry<InetAddress, Long> getFirst() {
-        if (this.path.isEmpty()) return null;
+        if (this.path.isEmpty())
+            return null;
         return this.path.entrySet().iterator().next();
     }
 
-	@SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     public <K, V> Entry<InetAddress, Long> getLast() throws NoSuchFieldException, IllegalAccessException {
         Field tail = this.path.getClass().getDeclaredField("tail");
         tail.setAccessible(true);
@@ -49,7 +45,7 @@ public class CABControlPacket extends CABPacket {
     public void addNode(InetAddress ip) {
         this.path.put(ip, System.currentTimeMillis());
         this.availableJumps--;
-		this.currentJumps++;
+        this.currentJumps++;
     }
 
     public long getDelay() {
@@ -64,13 +60,11 @@ public class CABControlPacket extends CABPacket {
         return path.keySet().stream().map(InetAddress::getHostAddress).toArray(String[]::new);
     }
 
-
     public void read(DataInputStream in) throws IOException {
         this.availableJumps = in.readInt();
         this.currentJumps = in.readInt();
 
-        for(int i = 0; i < this.currentJumps; i++)
-        {
+        for (int i = 0; i < this.currentJumps; i++) {
             String ip = in.readUTF();
             Long time = in.readLong();
 
@@ -79,14 +73,13 @@ public class CABControlPacket extends CABPacket {
         }
     }
 
-	public void write(DataOutputStream out) throws IOException {
-		super.write(out);
-		out.writeInt(this.availableJumps);
-		out.writeInt(this.currentJumps);
-		for(Entry<InetAddress, Long> entry : this.path.entrySet()) {
-			out.writeUTF(entry.getKey().toString());
-			out.writeUTF(entry.getValue().toString());
-		}
-		out.flush();
-	}
+    public void write(DataOutputStream out) throws IOException {
+        out.writeInt(this.availableJumps);
+        out.writeInt(this.currentJumps);
+        for (Entry<InetAddress, Long> entry : this.path.entrySet()) {
+            out.writeUTF(entry.getKey().toString());
+            out.writeUTF(entry.getValue().toString());
+        }
+        out.flush();
+    }
 }
