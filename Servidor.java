@@ -85,7 +85,7 @@ public class Servidor extends JFrame implements ActionListener {
     if (f.exists()) {
       // Create a Main object
       Servidor s = new Servidor(argv[0]);
-	  
+
       s.pack();
       s.setVisible(false);
     } else
