@@ -10,6 +10,7 @@ public enum MessageType {
     // To say which server??
     // Say a description of how it works
     REPLY_TOPOLOGY,
+    OPTIN,
     // For when a client wants to optout
     OPTOUT;
 
@@ -20,6 +21,7 @@ public enum MessageType {
             case 2 -> REPLY_CHOOSE_SERVER;
             case 3 -> TOPOLOGY;
             case 4 -> REPLY_TOPOLOGY;
+            case 5 ->
             case 5 -> OPTOUT;
             default -> null;
         };

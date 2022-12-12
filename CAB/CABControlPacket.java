@@ -47,6 +47,9 @@ public class CABControlPacket {
         return (Entry<InetAddress, Long>) tail.get(this.path);
     }
 
+    public InetAddress getServer() {
+        return getFirst().getKey();
+    }
     public int getAvailableJumps() {
         return this.availableJumps;
     }

@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
 
 public class ONode {
 
-	private String mylabel = idGenerator(16);
-	private Graph topology = new Graph();
 
 	// TODO Possible solution?
-	private Map<InetAddress, List<InetAddress>> serverToNeighbours;
+	//server, list of neighbours that need that server
+	//default, first server
+	private Map<InetAddress, List<InetAddress>> serverToActiveNeighbours;
 	private List<InetAddress> neighboursIP;
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
@@ -39,13 +39,10 @@ public class ONode {
 
 	public ONode(String ips[]) {
 
-		// Start topology
-		topology.addVertex(mylabel);
 
 		// String to INetAddress
 		this.neighboursIP = Arrays.asList(ips).stream().map((name) -> {
 			try {
-				topology.addEdge(mylabel, name);
 				return InetAddress.getByName(name);
 			} catch (UnknownHostException e1) {
 				return null;
@@ -53,7 +50,6 @@ public class ONode {
 		}).collect(Collectors.toList());
 
 		System.out.println("[INFO] Neighbours:\n" + this.neighboursIP.toString());
-		System.out.println("[INFO] Topology:\n" + this.topology.toString());
 
 		try {
 
@@ -190,7 +186,6 @@ public class ONode {
 						System.out.println("[INFO] New neighbour: " + ip.toString());
 						addNeighbour(ip);
 						System.out.println("[DEBUG] Neighbours:\n" + neighboursIP.toString());
-						System.out.println("[INFO] Topology:\n" + this.topology.toString());
 						sendPing(ip, "Hello!");
 					}
 
@@ -261,7 +256,6 @@ public class ONode {
 	private void addNeighbour(InetAddress ip) {
 		this.neighbourIP_lock.writeLock().lock();
 		this.neighboursIP.add(ip);
-		this.topology.addEdge(mylabel, ip.toString());
 		this.neighbourIP_lock.writeLock().unlock();
 	}
 
@@ -272,181 +266,8 @@ public class ONode {
 		return result;
 	}
 
-	private String idGenerator(int n) {
-		String alphaNumeric = "0123456789" + "abcdefghijklmnopqrstuvxyz";
-
-		StringBuilder sb = new StringBuilder(n);
-
-		for (int i = 0; i < n; i++) {
-			int index = (int) (alphaNumeric.length() * Math.random());
-			sb.append(alphaNumeric.charAt(index));
-		}
-
-		return sb.toString();
-	}
 
 	public static void main(String[] args) {
 		new ONode(args);
-	}
-}
-
-class Graph {
-
-	private class Vertex {
-		public final String label;
-		// public List<InetAddress> interfaces;
-		// public List<Edge> interfaces;
-		// public List<Vertex> adjVertices;
-
-		public boolean isEndpoint;
-
-		public Vertex(String label) {
-			this.label = label;
-		}
-	}
-
-	private class Edge {
-		public final Vertex from;
-		public final Vertex to;
-
-		public final InetAddress ifrom;
-		public final InetAddress ito;
-
-		public Float delay;
-		public boolean isActive;
-
-		public Edge(Vertex from, Vertex to, InetAddress ifrom, InetAddress ito) {
-			this.from = from;
-			this.to = to;
-			this.ifrom = ifrom;
-			this.ito = ito;
-		}
-
-		public Edge(Vertex from, Vertex to, InetAddress ifrom, InetAddress ito, Float delay) {
-			this(from, to, ifrom, ito);
-			this.delay = delay;
-		}
-	}
-
-	private final Map<String, List<String>> adjVertices = new HashMap<>();
-
-	public void addVertex(String label) {
-		adjVertices.putIfAbsent(label, new ArrayList<>());
-	}
-
-	public void removeVertex(String label) {
-		adjVertices.values().forEach(e -> e.remove(label));
-		adjVertices.remove(label);
-	}
-
-	public void addEdge(String label1, String label2) {
-		if (!adjVertices.containsKey(label1))
-			addVertex(label1);
-		if (!adjVertices.containsKey(label2))
-			addVertex(label2);
-		adjVertices.get(label1).add(label2);
-	}
-
-	public void removeEdge(String label1, String label2) {
-		List<String> eV1 = adjVertices.get(label1);
-		List<String> eV2 = adjVertices.get(label2);
-		if (eV1 != null)
-			eV1.remove(label2);
-		if (eV2 != null)
-			eV2.remove(label1);
-	}
-
-	public List<String> breadthFirst(String origem, String destino) {
-		Set<String> visited = new LinkedHashSet<>();
-		Queue<List<String>> queue = new LinkedList<>();
-
-		List<String> first_node = new ArrayList<>();
-		first_node.add(origem);
-
-		queue.add(first_node);
-		visited.add(origem);
-
-		while (!queue.isEmpty()) {
-			List<String> path = queue.poll();
-			String vertex = path.get(path.size() - 1);
-
-			if (vertex.equals(destino))
-				return path;
-
-			for (String v : this.getAdjVertices(vertex)) {
-				if (!visited.contains(v)) {
-					List<String> new_path = new ArrayList<>(path);
-					new_path.add(v);
-
-					queue.add(new_path);
-					visited.add(v);
-				}
-			}
-		}
-		// return visited.stream().toList();
-		return new ArrayList<>(visited);
-	}
-
-	public List<String> getAdjVertices(String label) {
-		return adjVertices.getOrDefault(label, null);
-	}
-
-	public Set<String> getNodes() {
-		return adjVertices.keySet();
-	}
-
-	public boolean equals(Graph other) {
-
-		for (String node : other.getNodes())
-			if (!this.getNodes().contains(node))
-				return false;
-
-		for (String node : this.getNodes())
-			if (!other.getNodes().contains(node))
-				return false;
-
-		for (String from : other.getNodes())
-			for (String to : other.getAdjVertices(from))
-				if (!this.getAdjVertices(from).contains(to))
-					return false;
-
-		for (String from : this.getNodes())
-			for (String to : this.getAdjVertices(from))
-				if (!other.getAdjVertices(from).contains(to))
-					return false;
-
-		return true;
-	}
-
-	public boolean merge(Graph other) {
-		boolean result = false; // were there changes
-
-		// check nodes first
-		for (String other_node : other.getNodes())
-			if (!this.getNodes().contains(other_node)) {
-				this.addVertex(other_node);
-				result = true;
-			}
-
-		// now check vertices
-		for (String other_node : other.getNodes())
-			for (String adj : other.getAdjVertices(other_node))
-				if (!this.getAdjVertices(other_node).contains(adj)) {
-					this.addEdge(other_node, adj);
-					result = true;
-				}
-
-		return result;
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder str = new StringBuilder();
-
-		for (String from : this.getNodes())
-			for (String to : this.getAdjVertices(from))
-				str.append(from + '-' + to + '\n');
-
-		return str.toString();
 	}
 }

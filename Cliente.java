@@ -14,6 +14,12 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 import CAB.CABControlPacket;
+import CAB.CABHelloPacket;
+import CAB.CABPacket;
+import CAB.MessageType;
+
+import static CAB.MessageType.OPTOUT;
+import static CAB.MessageType.TOPOLOGY;
 
 public class Cliente {
 
@@ -39,8 +45,8 @@ public class Cliente {
   byte[] cBuf; // buffer used to store data received from the server
 
   // Server information
-  InetAddress bestServer;
-  Long bestDelay;
+  static InetAddress bestServer;
+  static Long bestDelay;
 
   // --------------------------
   // Constructor
@@ -105,12 +111,13 @@ public class Cliente {
   public static void main(String argv[]) throws Exception {
     // send SETUP message to the server
     HashMap<InetAddress, Long> options = new HashMap<InetAddress, Long>();
-    for (String s : argv)
+    for (String ip : argv)
       new Thread(() -> {
         try {
-          sendControlPacket(InetAddress.getByName(s));
-          Long time = receiveControlPacket();
-          options.put(InetAddress.getByName(s), time);
+
+          //sendControlPacket(InetAddress.getByName(s));
+          //Long time = receiveControlPacket();
+          //options.put(InetAddress.getByName(s), time);
         } catch (Exception e) {
           System.out.println("Cliente: erro no main: " + e.getMessage());
         }
@@ -118,24 +125,65 @@ public class Cliente {
     InetAddress bestOption = Collections.min(options.entrySet(), Map.Entry.comparingByValue()).getKey();
 
     Cliente t = new Cliente(bestOption);
+    controlPackets();
   }
 
-  private static Long receiveControlPacket() {
+  private static void controlPackets() {
+
     try (ServerSocket serverSocket = new ServerSocket(5001)) {
+      //receive packet
       Socket socket = serverSocket.accept();
       DataInputStream in = new DataInputStream(socket.getInputStream());
-      CABControlPacket reply = new CABControlPacket(in);
-      System.out.println("Cliente: Recebido comando " + reply);
-      long time = reply.getDelay();
-      System.out.println("Cliente: Delay " + time);
-      return time;
-    } catch (IOException ex) {
-      System.out.println("Cliente: Erro no recebimento do comando ");
+      CABPacket packet = new CABPacket(in);
+
+      // process packet
+      switch (packet.type) {
+        //Will just print the message
+        case HELLO:
+          if (packet.message instanceof CABHelloPacket helloPacket) {
+            String str = helloPacket.getMessage();
+            System.out.println("[DEBUG] Received ping message from " + socket.getInetAddress().toString()
+                    + ":\n" + str);
+          } else {
+            System.out.println("Something's wrong with this HELLO packet");
+          }
+          break;
+
+        // Will compare with current server and reply if anything changed
+        case CHOOSE_SERVER:
+          if (packet.message instanceof CABControlPacket controlPacket) {
+            InetAddress packetServer = controlPacket.getServer();
+            Long packetDelay = controlPacket.getDelay();
+
+            if (bestServer == null || bestDelay > packetDelay) {
+              bestServer = packetServer;
+              bestDelay = packetDelay;
+
+              packet.type = MessageType.REPLY_CHOOSE_SERVER;
+              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+              packet.write(out);
+
+            } else if (bestServer == packetServer) {
+              bestDelay = packetDelay;
+            }
+
+          } else {
+            System.out.println("Something's wrong with this CHOOSE_SERVER packet");
+          }
+
+          break;
+
+          // IDK
+        case TOPOLOGY:
+          break;
+      }
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
-  // ------------------------------------
+    // ------------------------------------
   // Send control packet
   // ------------------------------------
   private static void sendControlPacket(InetAddress neighbour) {
@@ -185,6 +233,11 @@ public class Cliente {
       System.out.println("Teardown Button pressed !");
       // stop the timer
       cTimer.stop();
+
+      //optout
+      CABPacket optout = new CABPacket(OPTOUT, null);
+      optout.write(out);
+
       // exit
       System.exit(0);
     }
@@ -211,6 +264,7 @@ public class Cliente {
         // receive the DP from the socket:
         RTPsocket.receive(rcvdp);
 
+        //wait... this will never happen, since it will just receive from the best option
         if (!rcvdp.getAddress().equals(bestOption)) {
           System.out.println("Cliente: Pacote recebido de " + rcvdp.getAddress() + " ignorado");
           return;

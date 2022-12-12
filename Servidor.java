@@ -53,9 +53,6 @@ public class Servidor extends JFrame implements ActionListener {
 
 
 
-
-
-
     // init para a parte do servidor
     sTimer = new Timer(FRAME_PERIOD, this); // init Timer para servidor
     sTimer.setInitialDelay(0);
@@ -110,6 +107,7 @@ public class Servidor extends JFrame implements ActionListener {
 
       server.pack();
       server.setVisible(false);
+      server.controlSendThread().start();
     } else
       System.out.println("Ficheiro de video não existe: " + VideoFileName);
   }
@@ -168,30 +166,33 @@ public class Servidor extends JFrame implements ActionListener {
 
     topologyConstrutor.write(new DataOutputStream(new_socket.getOutputStream()));
 
-    DataInputStream in  = new DataInputStream(new_socket.getInputStream());
-
     //é preciso receber algo?
+    //DataInputStream in  = new DataInputStream(new_socket.getInputStream());
+
 
     new_socket.close();
   }
 
-  private Thread controlSendTread(Socket socket) {
+  private Thread controlSendThread(Socket socket) {
     return new Thread(() -> {
       try {
-        CABPacket controlPacket = new CABPacket(
-                CHOOSE_SERVER,
-                new CABControlPacket(10)
-        );
+        while(true) {
+          CABPacket controlPacket = new CABPacket(
+                  CHOOSE_SERVER,
+                  new CABControlPacket(10)
+          );
+          controlPacket.write(new DataOutputStream(socket.getOutputStream()));
+          Thread.sleep(60000);
+        }
 
-        controlPacket.write(new DataOutputStream(socket.getOutputStream()));
 
       } catch (UnknownHostException e) {
         throw new RuntimeException(e);
       } catch (IOException e) {
         throw new RuntimeException(e);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
       }
-
-      //TODO fazer um timer aqui e está pronto :D
 
     });
   }
