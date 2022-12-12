@@ -30,11 +30,12 @@ public class ONode {
 	private String mylabel = idGenerator(16);
 	private Graph topology = new Graph();
 
+	// TODO Possible solution?
+	private Map<InetAddress, List<InetAddress>> serverToNeighbours;
 	private List<InetAddress> neighboursIP;
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
 	private ServerSocket socket_control;
-	private CABPacket packet;
 
 	public ONode(String ips[]) {
 
@@ -94,7 +95,7 @@ public class ONode {
 
 				// Process
 				DataInputStream in = new DataInputStream(s.getInputStream());
-				packet.read(in);
+				CABPacket packet = new CABPacket(in);
 
 				switch (packet.type) {
 
@@ -148,6 +149,11 @@ public class ONode {
 							System.out.println("Something's wrong with this REPLY_PATH packet");
 						}
 
+						break;
+
+					case OPTOUT:
+						InetAddress ip = s.getInetAddress();
+						neighboursIP.remove(ip);
 						break;
 
 					default:

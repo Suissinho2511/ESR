@@ -16,6 +16,10 @@ public class CABPacket {
 		this.message = message;
 	}
 
+	public CABPacket(DataInputStream in) throws IOException {
+		read(in);
+	}
+
 	public void read(DataInputStream in) throws IOException {
 		this.type = MessageType.fromInteger(in.readInt());
 		switch (type) {
@@ -24,6 +28,7 @@ public class CABPacket {
 				break;
 			case PROBE_PATH:
 			case REPLY_PATH:
+			case TOPOLOGY:
 				message = new CABControlPacket(in);
 				break;
 
@@ -41,6 +46,7 @@ public class CABPacket {
 				break;
 			case PROBE_PATH:
 			case REPLY_PATH:
+			case TOPOLOGY:
 				if (message instanceof CABControlPacket controlMessage) {
 					controlMessage.write(out);
 				}

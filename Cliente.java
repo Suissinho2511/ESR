@@ -38,6 +38,10 @@ public class Cliente {
   Timer cTimer; // timer used to receive data from the UDP socket
   byte[] cBuf; // buffer used to store data received from the server
 
+  // Server information
+  InetAddress bestServer;
+  Long bestDelay;
+
   // --------------------------
   // Constructor
   // --------------------------

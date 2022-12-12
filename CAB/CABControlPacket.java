@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -20,6 +21,13 @@ public class CABControlPacket {
         this.currentJumps = 0;
         this.path = new LinkedHashMap<>();
         this.path.put(currAddress, timestamp);
+    }
+
+    public CABControlPacket(int maxJumps) throws UnknownHostException {
+        this.availableJumps = maxJumps;
+        this.currentJumps = 0;
+        this.path = new LinkedHashMap<>();
+        this.path.put(InetAddress.getLocalHost(), System.currentTimeMillis());
     }
 
     public CABControlPacket(DataInputStream in) throws IOException {

@@ -1,10 +1,16 @@
 
+import CAB.CABControlPacket;
+import CAB.CABPacket;
+
 import java.io.*;
 import java.net.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.Timer;
+
+import static CAB.MessageType.PROBE_PATH;
+import static CAB.MessageType.TOPOLOGY;
 
 public class Servidor extends JFrame implements ActionListener {
 
@@ -32,12 +38,23 @@ public class Servidor extends JFrame implements ActionListener {
   Timer sTimer; // timer used to send the images at the video frame rate
   byte[] sBuf; // buffer used to store the images to send to the client
 
+  private ServerSocket socketControl; //for sending control packets
+
   // --------------------------
   // Constructor
   // --------------------------
-  public Servidor(String ip) {
+  public Servidor(String ip) throws IOException {
     // init Frame
     super("Servidor");
+
+    // Topology constructor
+    this.socketControl = new ServerSocket(5001);
+    TopologyConstructor(InetAddress.getByName(ip));
+
+
+
+
+
 
     // init para a parte do servidor
     sTimer = new Timer(FRAME_PERIOD, this); // init Timer para servidor
@@ -72,6 +89,11 @@ public class Servidor extends JFrame implements ActionListener {
     getContentPane().add(label, BorderLayout.CENTER);
 
     sTimer.start();
+
+
+
+
+
   }
 
   // ------------------------------------
@@ -81,13 +103,13 @@ public class Servidor extends JFrame implements ActionListener {
     // get video filename to request:
     VideoFileName = "movie.Mjpeg";
 
-    File f = new File(VideoFileName);
-    if (f.exists()) {
+    File file = new File(VideoFileName);
+    if (file.exists()) {
       // Create a Main object
-      Servidor s = new Servidor(argv[0]);
+      Servidor server = new Servidor(argv[0]);
 
-      s.pack();
-      s.setVisible(false);
+      server.pack();
+      server.setVisible(false);
     } else
       System.out.println("Ficheiro de video não existe: " + VideoFileName);
   }
@@ -134,6 +156,50 @@ public class Servidor extends JFrame implements ActionListener {
       // if we have reached the end of the video file, stop the timer
       sTimer.stop();
     }
+  }
+
+  private void TopologyConstructor(InetAddress ip) throws IOException {
+    //Time to make a tree :D
+    CABPacket topologyConstrutor = new CABPacket(
+            TOPOLOGY,
+            new CABControlPacket(10)
+    );
+    Socket new_socket = new Socket(ip, 5001);
+
+    topologyConstrutor.write(new DataOutputStream(new_socket.getOutputStream()));
+
+    DataInputStream in  = new DataInputStream(new_socket.getInputStream());
+
+    //é preciso receber algo?
+
+    new_socket.close();
+  }
+
+  private Thread controlSendTread(Socket socket) {
+    return new Thread(() -> {
+      try {
+        CABPacket controlPacket = new CABPacket(
+                PROBE_PATH,
+                new CABControlPacket(10)
+        );
+
+        controlPacket.write(new DataOutputStream(socket.getOutputStream()));
+
+      } catch (UnknownHostException e) {
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+
+      //TODO fazer um timer aqui e está pronto :D
+
+    });
+  }
+
+  private Thread controlReceiveTread(Socket s) {
+    return new Thread(() -> {
+
+    });
   }
 
 }// end of Class Servidor
