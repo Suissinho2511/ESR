@@ -1,4 +1,5 @@
 import CAB.CABPacket;
+import CAB.MessageType;
 import CAB.CABHelloPacket;
 import CAB.CABControlPacket;
 
@@ -33,6 +34,7 @@ public class ONode {
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
 	private ServerSocket socket_control;
+	private CABPacket packet;
 
 	public ONode(String ips[]) {
 
@@ -92,7 +94,6 @@ public class ONode {
 
 				// Process
 				DataInputStream in = new DataInputStream(s.getInputStream());
-				CABPacket packet = new CABPacket();
 				packet.read(in);
 
 				switch (packet.type) {
@@ -112,9 +113,16 @@ public class ONode {
 								controlPacket.getAvailableJumps() > 0
 								&& !controlPacket.getPathAsInetAddress().contains(s.getLocalAddress())) {
 
-							// TODO: Verificar availableJumps e assim
 							controlPacket.addNode(s.getLocalAddress());
-							// TODO: Spread packet
+
+							// sent to those that hasn't passed through
+							for (InetAddress ip : this.neighboursIP) {
+								if (!controlPacket.getPathAsInetAddress().contains(ip)) {
+									new CABPacket(MessageType.PROBE_PATH, controlPacket)
+											.write(new DataOutputStream(new Socket(ip, 5001).getOutputStream()));
+								}
+							}
+
 							System.out.println("[DEBUG] Received probe path request from "
 									+ s.getInetAddress().toString() + ". Spreading...");
 						} else {
@@ -127,7 +135,13 @@ public class ONode {
 						// Reply path
 						if (packet.message instanceof CABControlPacket controlPacket) {
 
-							// TODO: retornar à origem
+							// send to those that has passed through
+							for (InetAddress ip : this.neighboursIP) {
+								if (controlPacket.getPathAsInetAddress().contains(ip)) {
+									packet.write(new DataOutputStream(new Socket(ip, 5001).getOutputStream()));
+								}
+							}
+
 							System.out.println("[DEBUG] Received path from " + s.getInetAddress().toString()
 									+ ". Returning to origin...");
 						} else {

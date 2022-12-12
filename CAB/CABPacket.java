@@ -11,6 +11,11 @@ public class CABPacket {
 	public CABPacket() {
 	}
 
+	public CABPacket(MessageType type, Object message) {
+		this.type = type;
+		this.message = message;
+	}
+
 	public void read(DataInputStream in) throws IOException {
 		this.type = MessageType.fromInteger(in.readInt());
 		switch (type) {
