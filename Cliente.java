@@ -12,6 +12,8 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
+import CAB.CABControlPacket;
+
 public class Cliente {
 
   // GUI

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 public class CABControlPacket {
@@ -58,6 +59,10 @@ public class CABControlPacket {
 
     public String[] getPath() {
         return path.keySet().stream().map(InetAddress::getHostAddress).toArray(String[]::new);
+    }
+
+    public List<InetAddress> getPathAsInetAddress() {
+        return List.copyOf(this.path.keySet());
     }
 
     public void read(DataInputStream in) throws IOException {

@@ -13,6 +13,8 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
+import CAB.CABControlPacket;
+
 public class Cliente {
 
   // GUI
@@ -39,7 +41,7 @@ public class Cliente {
   // --------------------------
   // Constructor
   // --------------------------
-  public Cliente() {
+  public Cliente(InetAddress bestOption) {
 
     // build GUI
     // --------------------------
@@ -79,7 +81,7 @@ public class Cliente {
 
     // init para a parte do cliente
     // --------------------------
-    cTimer = new Timer(20, new clientTimerListener());
+    cTimer = new Timer(20, new clientTimerListener(bestOption));
     cTimer.setInitialDelay(0);
     cTimer.setCoalesce(true);
     cBuf = new byte[15000]; // allocate enough memory for the buffer used to receive data from the server
@@ -97,7 +99,52 @@ public class Cliente {
   // main
   // ------------------------------------
   public static void main(String argv[]) throws Exception {
-    Cliente t = new Cliente();
+    // send SETUP message to the server
+    HashMap<InetAddress, Long> options = new HashMap<InetAddress, Long>();
+    for (String s : argv)
+      new Thread(() -> {
+        try {
+          sendControlPacket(InetAddress.getByName(s));
+          long time = receiveControlPacket();
+          options.put(InetAddress.getByName(s), time);
+        } catch (Exception e) {
+          System.out.println("Cliente: erro no main: " + e.getMessage());
+        }
+      }).start();
+    InetAddress bestOption = Collections.min(options.entrySet(), Map.Entry.comparingByValue()).getKey();
+
+    Cliente t = new Cliente(bestOption);
+  }
+
+  private static long receiveControlPacket() {
+    try (ServerSocket serverSocket = new ServerSocket(5001)) {
+      Socket socket = serverSocket.accept();
+      DataInputStream in = new DataInputStream(socket.getInputStream());
+      CABControlPacket reply = new CABControlPacket(in);
+      System.out.println("Cliente: Recebido comando " + reply);
+      long time = reply.getDelay();
+      System.out.println("Cliente: Delay " + time);
+      return time;
+    } catch (IOException ex) {
+      System.out.println("Cliente: Erro no recebimento do comando ");
+    }
+    return -1;
+  }
+
+  // ------------------------------------
+  // Send control packet
+  // ------------------------------------
+  private static void sendControlPacket(InetAddress neighbour) {
+    // send RTSP request
+    try (Socket socket = new Socket(neighbour, 5001)) {
+      // use the RTSPBufferedWriter to write to the RTSP socket
+      CABControlPacket command = new CABControlPacket(99, socket.getLocalAddress(), System.currentTimeMillis());
+      DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+      command.write(out);
+      System.out.println("Cliente: Enviado comando " + command);
+    } catch (IOException ex) {
+      System.out.println("Cliente: Erro no envio do comando ");
+    }
   }
 
   // ------------------------------------
@@ -144,6 +191,13 @@ public class Cliente {
   // ------------------------------------
 
   class clientTimerListener implements ActionListener {
+
+    private InetAddress bestOption;
+
+    public clientTimerListener(InetAddress bestOption) {
+      this.bestOption = bestOption;
+    }
+
     public void actionPerformed(ActionEvent e) {
 
       // Construct a DatagramPacket to receive data from the UDP socket
@@ -152,6 +206,11 @@ public class Cliente {
       try {
         // receive the DP from the socket:
         RTPsocket.receive(rcvdp);
+
+        if (!rcvdp.getAddress().equals(bestOption)) {
+          System.out.println("Cliente: Pacote recebido de " + rcvdp.getAddress() + " ignorado");
+          return;
+        }
 
         // create an RTPpacket object from the DP
         RTPpacket rtp_packet = new RTPpacket(rcvdp.getData(), rcvdp.getLength());

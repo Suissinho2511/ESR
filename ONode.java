@@ -109,7 +109,8 @@ public class ONode {
 
 					case PROBE_PATH:
 						if (packet.message instanceof CABControlPacket controlPacket &&
-								controlPacket.getAvailableJumps() > 0) {
+								controlPacket.getAvailableJumps() > 0
+								&& !controlPacket.getPathAsInetAddress().contains(s.getLocalAddress())) {
 
 							// TODO: Verificar availableJumps e assim
 							controlPacket.addNode(s.getLocalAddress());
