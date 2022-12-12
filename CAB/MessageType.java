@@ -3,24 +3,24 @@ package CAB;
 public enum MessageType {
     // Generic message
     HELLO,
-    // To decide which server sends the fastest package
-    // Say a description of how it works
-    PROBE_PATH,
+    // For cliente to choose which server has less delay
+    CHOOSE_SERVER,
+    REPLY_CHOOSE_SERVER,
+    TOPOLOGY,
     // To say which server??
     // Say a description of how it works
-    REPLY_PATH,
+    REPLY_TOPOLOGY,
     // For when a client wants to optout
-    OPTOUT,
-    // to construct the tree
-    TOPOLOGY;
+    OPTOUT;
 
     public static MessageType fromInteger(int x) {
         return switch (x) {
             case 0 -> HELLO;
-            case 1 -> PROBE_PATH;
-            case 2 -> REPLY_PATH;
-            case 3 -> OPTOUT;
-            case 4 -> TOPOLOGY;
+            case 1 -> CHOOSE_SERVER;
+            case 2 -> REPLY_CHOOSE_SERVER;
+            case 3 -> TOPOLOGY;
+            case 4 -> REPLY_TOPOLOGY;
+            case 5 -> OPTOUT;
             default -> null;
         };
     }
@@ -28,10 +28,11 @@ public enum MessageType {
     public static int toInteger(MessageType x) {
         return switch (x) {
             case HELLO -> 0;
-            case PROBE_PATH -> 1;
-            case REPLY_PATH -> 2;
-            case OPTOUT -> 3;
-            case TOPOLOGY -> 4;
+            case CHOOSE_SERVER -> 1;
+            case REPLY_CHOOSE_SERVER -> 2;
+            case TOPOLOGY -> 3;
+            case REPLY_TOPOLOGY -> 4;
+            case OPTOUT -> 5;
             default -> -1;
         };
     }

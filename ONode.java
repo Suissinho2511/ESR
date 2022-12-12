@@ -109,7 +109,7 @@ public class ONode {
 						}
 						break;
 
-					case PROBE_PATH:
+					case CHOOSE_SERVER:
 						if (packet.message instanceof CABControlPacket controlPacket &&
 								controlPacket.getAvailableJumps() > 0
 								&& !controlPacket.getPathAsInetAddress().contains(s.getLocalAddress())) {
@@ -119,7 +119,7 @@ public class ONode {
 							// sent to those that hasn't passed through
 							for (InetAddress ip : this.neighboursIP) {
 								if (!controlPacket.getPathAsInetAddress().contains(ip)) {
-									new CABPacket(MessageType.PROBE_PATH, controlPacket)
+									new CABPacket(MessageType.CHOOSE_SERVER, controlPacket)
 											.write(new DataOutputStream(new Socket(ip, 5001).getOutputStream()));
 								}
 							}
@@ -132,7 +132,7 @@ public class ONode {
 
 						break;
 
-					case REPLY_PATH:
+					case REPLY_CHOOSE_SERVER:
 						// Reply path
 						if (packet.message instanceof CABControlPacket controlPacket) {
 

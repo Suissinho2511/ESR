@@ -9,7 +9,7 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
-import static CAB.MessageType.PROBE_PATH;
+import static CAB.MessageType.CHOOSE_SERVER;
 import static CAB.MessageType.TOPOLOGY;
 
 public class Servidor extends JFrame implements ActionListener {
@@ -179,7 +179,7 @@ public class Servidor extends JFrame implements ActionListener {
     return new Thread(() -> {
       try {
         CABPacket controlPacket = new CABPacket(
-                PROBE_PATH,
+                CHOOSE_SERVER,
                 new CABControlPacket(10)
         );
 

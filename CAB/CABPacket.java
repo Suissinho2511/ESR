@@ -26,9 +26,10 @@ public class CABPacket {
 			case HELLO:
 				message = new CABHelloPacket(in);
 				break;
-			case PROBE_PATH:
-			case REPLY_PATH:
+			case CHOOSE_SERVER:
+			case REPLY_CHOOSE_SERVER:
 			case TOPOLOGY:
+			case REPLY_TOPOLOGY:
 				message = new CABControlPacket(in);
 				break;
 
@@ -44,9 +45,10 @@ public class CABPacket {
 					helloMessage.write(out);
 				}
 				break;
-			case PROBE_PATH:
-			case REPLY_PATH:
+			case CHOOSE_SERVER:
+			case REPLY_CHOOSE_SERVER:
 			case TOPOLOGY:
+			case REPLY_TOPOLOGY:
 				if (message instanceof CABControlPacket controlMessage) {
 					controlMessage.write(out);
 				}
