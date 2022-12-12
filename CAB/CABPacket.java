@@ -24,6 +24,8 @@ public class CABPacket {
 		this.type = MessageType.fromInteger(in.readInt());
 		switch (type) {
 			case HELLO:
+			case OPTIN:
+			case OPTOUT:
 				message = new CABHelloPacket(in);
 				break;
 			case CHOOSE_SERVER:
@@ -41,6 +43,8 @@ public class CABPacket {
 		out.writeInt(MessageType.toInteger(this.type));
 		switch (type) {
 			case HELLO:
+			case OPTIN:
+			case OPTOUT:
 				if (message instanceof CABHelloPacket helloMessage) {
 					helloMessage.write(out);
 				}

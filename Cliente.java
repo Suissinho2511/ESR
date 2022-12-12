@@ -45,6 +45,7 @@ public class Cliente {
   byte[] cBuf; // buffer used to store data received from the server
 
   // Server information
+  InetAddress activeNeighbour;
   static InetAddress bestServer;
   static Long bestDelay;
 
@@ -175,14 +176,7 @@ public class Cliente {
 
         // IDK
         case TOPOLOGY:
-          break;
-        case OPTIN:
-          break;
-        case OPTOUT:
-          break;
-        case REPLY_CHOOSE_SERVER:
-          break;
-        case REPLY_TOPOLOGY:
+
           break;
         default:
           break;
@@ -196,7 +190,7 @@ public class Cliente {
   // ------------------------------------
   // Send control packet
   // ------------------------------------
-  private static void sendControlPacket(InetAddress neighbour) {
+  private static void sendControlPacket(InetAddress neighbour, CABPacket packet) {
     // send RTSP request
     try (Socket socket = new Socket(neighbour, 5001)) {
       // use the RTSPBufferedWriter to write to the RTSP socket
