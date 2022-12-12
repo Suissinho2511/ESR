@@ -38,20 +38,21 @@ public class Servidor extends JFrame implements ActionListener {
   Timer sTimer; // timer used to send the images at the video frame rate
   byte[] sBuf; // buffer used to store the images to send to the client
 
-  private ServerSocket socketControl; //for sending control packets
+  private ServerSocket socketControl; // for sending control packets
 
   // --------------------------
   // Constructor
   // --------------------------
-  public Servidor(String ip) throws IOException {
+  public Servidor(String argv) throws IOException {
     // init Frame
     super("Servidor");
 
     // Topology constructor
+
     this.socketControl = new ServerSocket(5001);
-    TopologyConstructor(InetAddress.getByName(ip));
 
-
+    TopologyConstructor(InetAddress.getByName(argv));
+    controlSendThread(new Socket(argv, 5001)).start();
 
     // init para a parte do servidor
     sTimer = new Timer(FRAME_PERIOD, this); // init Timer para servidor
@@ -61,7 +62,7 @@ public class Servidor extends JFrame implements ActionListener {
 
     try {
       RTPsocket = new DatagramSocket(); // init RTP socket
-      ClientIPAddr = InetAddress.getByName(ip);
+      ClientIPAddr = InetAddress.getByName(argv);
       System.out.println("Servidor: socket " + ClientIPAddr);
       video = new VideoStream(VideoFileName); // init the VideoStream object:
       System.out.println("Servidor: vai enviar video da file " + VideoFileName);
@@ -87,10 +88,6 @@ public class Servidor extends JFrame implements ActionListener {
 
     sTimer.start();
 
-
-
-
-
   }
 
   // ------------------------------------
@@ -107,7 +104,6 @@ public class Servidor extends JFrame implements ActionListener {
 
       server.pack();
       server.setVisible(false);
-      server.controlSendThread().start();
     } else
       System.out.println("Ficheiro de video não existe: " + VideoFileName);
   }
@@ -157,18 +153,16 @@ public class Servidor extends JFrame implements ActionListener {
   }
 
   private void TopologyConstructor(InetAddress ip) throws IOException {
-    //Time to make a tree :D
+    // Time to make a tree :D
     CABPacket topologyConstrutor = new CABPacket(
-            TOPOLOGY,
-            new CABControlPacket(10)
-    );
+        TOPOLOGY,
+        new CABControlPacket(10));
     Socket new_socket = new Socket(ip, 5001);
 
     topologyConstrutor.write(new DataOutputStream(new_socket.getOutputStream()));
 
-    //é preciso receber algo?
-    //DataInputStream in  = new DataInputStream(new_socket.getInputStream());
-
+    // é preciso receber algo?
+    // DataInputStream in = new DataInputStream(new_socket.getInputStream());
 
     new_socket.close();
   }
@@ -176,15 +170,13 @@ public class Servidor extends JFrame implements ActionListener {
   private Thread controlSendThread(Socket socket) {
     return new Thread(() -> {
       try {
-        while(true) {
+        while (true) {
           CABPacket controlPacket = new CABPacket(
-                  CHOOSE_SERVER,
-                  new CABControlPacket(10)
-          );
+              CHOOSE_SERVER,
+              new CABControlPacket(10));
           controlPacket.write(new DataOutputStream(socket.getOutputStream()));
           Thread.sleep(60000);
         }
-
 
       } catch (UnknownHostException e) {
         throw new RuntimeException(e);

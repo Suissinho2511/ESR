@@ -21,8 +21,8 @@ public enum MessageType {
             case 2 -> REPLY_CHOOSE_SERVER;
             case 3 -> TOPOLOGY;
             case 4 -> REPLY_TOPOLOGY;
-            case 5 ->
-            case 5 -> OPTOUT;
+            case 5 -> OPTIN;
+            case 6 -> OPTOUT;
             default -> null;
         };
     }
@@ -34,7 +34,8 @@ public enum MessageType {
             case REPLY_CHOOSE_SERVER -> 2;
             case TOPOLOGY -> 3;
             case REPLY_TOPOLOGY -> 4;
-            case OPTOUT -> 5;
+            case OPTIN -> 5;
+            case OPTOUT -> 6;
             default -> -1;
         };
     }

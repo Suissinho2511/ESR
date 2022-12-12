@@ -115,9 +115,9 @@ public class Cliente {
       new Thread(() -> {
         try {
 
-          //sendControlPacket(InetAddress.getByName(s));
-          //Long time = receiveControlPacket();
-          //options.put(InetAddress.getByName(s), time);
+          // sendControlPacket(InetAddress.getByName(s));
+          // Long time = receiveControlPacket();
+          // options.put(InetAddress.getByName(s), time);
         } catch (Exception e) {
           System.out.println("Cliente: erro no main: " + e.getMessage());
         }
@@ -131,19 +131,19 @@ public class Cliente {
   private static void controlPackets() {
 
     try (ServerSocket serverSocket = new ServerSocket(5001)) {
-      //receive packet
+      // receive packet
       Socket socket = serverSocket.accept();
       DataInputStream in = new DataInputStream(socket.getInputStream());
       CABPacket packet = new CABPacket(in);
 
       // process packet
       switch (packet.type) {
-        //Will just print the message
+        // Will just print the message
         case HELLO:
           if (packet.message instanceof CABHelloPacket helloPacket) {
             String str = helloPacket.getMessage();
             System.out.println("[DEBUG] Received ping message from " + socket.getInetAddress().toString()
-                    + ":\n" + str);
+                + ":\n" + str);
           } else {
             System.out.println("Something's wrong with this HELLO packet");
           }
@@ -173,8 +173,18 @@ public class Cliente {
 
           break;
 
-          // IDK
+        // IDK
         case TOPOLOGY:
+          break;
+        case OPTIN:
+          break;
+        case OPTOUT:
+          break;
+        case REPLY_CHOOSE_SERVER:
+          break;
+        case REPLY_TOPOLOGY:
+          break;
+        default:
           break;
       }
 
@@ -183,7 +193,7 @@ public class Cliente {
     }
   }
 
-    // ------------------------------------
+  // ------------------------------------
   // Send control packet
   // ------------------------------------
   private static void sendControlPacket(InetAddress neighbour) {
@@ -234,9 +244,10 @@ public class Cliente {
       // stop the timer
       cTimer.stop();
 
-      //optout
+      // optout
       CABPacket optout = new CABPacket(OPTOUT, null);
-      optout.write(out);
+      // TODO:
+      // optout.write(out);
 
       // exit
       System.exit(0);
@@ -264,7 +275,8 @@ public class Cliente {
         // receive the DP from the socket:
         RTPsocket.receive(rcvdp);
 
-        //wait... this will never happen, since it will just receive from the best option
+        // wait... this will never happen, since it will just receive from the best
+        // option
         if (!rcvdp.getAddress().equals(bestOption)) {
           System.out.println("Cliente: Pacote recebido de " + rcvdp.getAddress() + " ignorado");
           return;
