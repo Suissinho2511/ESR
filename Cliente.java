@@ -112,6 +112,8 @@ public class Cliente {
   public static void main(String argv[]) throws Exception {
     // send SETUP message to the server
     Cliente t = new Cliente();
+    CABPacket packet = new CABPacket(MessageType.OPTIN, new CABHelloPacket("im a client"));
+    sendControlPacket(InetAddress.getByName(argv[0]), packet);
     controlPackets();
   }
 
@@ -187,10 +189,9 @@ public class Cliente {
     // send RTSP request
     try (Socket socket = new Socket(neighbour, 5001)) {
       // use the RTSPBufferedWriter to write to the RTSP socket
-      CABControlPacket command = new CABControlPacket(99, socket.getLocalAddress(), System.currentTimeMillis());
       DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-      command.write(out);
-      System.out.println("Cliente: Enviado comando " + command);
+      packet.write(out);
+      System.out.println("Cliente: Enviado comando " + packet);
     } catch (IOException ex) {
       System.out.println("Cliente: Erro no envio do comando ");
     }
