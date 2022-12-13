@@ -149,6 +149,9 @@ public class Cliente {
               bestServer = packetServer;
               bestDelay = packetDelay;
 
+			  // append new best server
+			  controlPacket.addNode(bestServer);
+			  packet.message = controlPacket;
               packet.type = MessageType.REPLY_CHOOSE_SERVER;
               DataOutputStream out = new DataOutputStream(socket.getOutputStream());
               packet.write(out);

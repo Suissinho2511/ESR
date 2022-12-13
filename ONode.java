@@ -151,7 +151,7 @@ public class ONode {
 							}
 
 
-							InetAddress newServerIp = InetAddress.getByName("192.168.suck.my.balls");
+							InetAddress newServerIp = replyPacket.getLast().getKey();
 
 							// If server doesn't exist, we add a new key
 							if (!serverToActiveNeighbours.containsKey(newServerIp)) {
