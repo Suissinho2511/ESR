@@ -112,7 +112,7 @@ public class Cliente {
   public static void main(String argv[]) throws Exception {
     // send SETUP message to the server
     Cliente t = new Cliente();
-    CABPacket packet = new CABPacket(MessageType.OPTIN, new CABHelloPacket("im a client"));
+    CABPacket packet = new CABPacket(MessageType.OPTIN, new CABHelloPacket("Im a client"));
     sendControlPacket(InetAddress.getByName(argv[0]), packet);
     controlPackets();
   }

@@ -224,10 +224,10 @@ public class RTPpacket {
   public InetAddress getServerIP() throws UnknownHostException {
     //byte[] ip = BigInteger.valueOf(ssrc).toByteArray();
     String ipStr = String.format("%d.%d.%d.%d",
-          (ssrc & 0xff),   
-          (ssrc >> 8 & 0xff),             
-          (ssrc >> 16 & 0xff),    
-          (ssrc >> 24 & 0xff));
+          (ssrc >> 24 & 0xff),   
+          (ssrc >> 16 & 0xff), 
+          (ssrc >> 8 & 0xff),    
+          (ssrc & 0xff));
     
     InetAddress result = InetAddress.getByName(ipStr);
     System.out.println("here");
