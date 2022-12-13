@@ -6,7 +6,6 @@ import CAB.CABControlPacket;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -39,17 +38,16 @@ public class ONode {
 			i++;
 			InetAddress sourceIP = InetAddress.getByName(ips[i]);
 			i += 2;
-			List<InetAddress> destinationsIP = null;
+			List<InetAddress> destinationsIP = new ArrayList<>();
 
 			while (!ips[i].equals(">")) {
 				destinationsIP.add(InetAddress.getByName(ips[i]));
 				i++;
 			}
+			addConnection(serverIP, sourceIP, destinationsIP);
 		}
 
 		System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
-
-		System.out.println("[INFO] Neighbours:\n" + getNeighbours().toString());
 
 		serverToActiveNeighbours = new HashMap<>();
 
@@ -122,14 +120,21 @@ public class ONode {
 								break;
 
 							controlPacket.addNode(s.getLocalAddress());
+							
 
 							// sent to those that hasn't passed through
 							for (InetAddress ip : getDestinationsByServer(controlPacket.getServer())) {
+								Socket newSocket = new Socket(ip, 5001);
 								if (!controlPacket.getPathAsInetAddress().contains(ip)) {
 									new CABPacket(MessageType.CHOOSE_SERVER, controlPacket)
-											.write(new DataOutputStream(new Socket(ip, 5001).getOutputStream()));
+											.write(new DataOutputStream(newSocket.getOutputStream()));
 								}
+								newSocket.close();
 							}
+
+							
+
+
 
 							System.out.println("[DEBUG] Received probe path request from "
 									+ neighbourIP.toString() + ". Spreading...");
@@ -150,7 +155,7 @@ public class ONode {
 
 							// If server stops being active, then we need to opt-out in previous node
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
-								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
+								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTOUT, new CABHelloPacket(serverIP.toString())).write(out);
 								newSocket.close();
@@ -164,7 +169,7 @@ public class ONode {
 								serverToActiveNeighbours.put(newServerIp, new ArrayList<>());
 
 								// if a new server is added, we need to inform the source node
-								Socket newSocket = new Socket(addressTable.get(newServerIp).get(neighbourIP), 5001);
+								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTIN, new CABHelloPacket(newServerIp.toString())).write(out);
 								newSocket.close();
@@ -199,7 +204,7 @@ public class ONode {
 
 								// if a new server is added, we need to send this reply to before node of this
 								// thing
-								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
+								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTIN, optinPacket).write(out);
 								newSocket.close();
@@ -217,7 +222,7 @@ public class ONode {
 							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
 							removeActiveNeighbour(serverIP, neighbourIP);
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
-								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
+								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
 								newSocket.close();
@@ -255,7 +260,7 @@ public class ONode {
 				while (true) {
 
 					Socket new_socket = socket_control.accept();
-					InetAddress ip = new_socket.getInetAddress();
+					// InetAddress ip = new_socket.getInetAddress();
 
 					// New neighbour: (Vamos considerar algo estático na topologia)
 					/*
@@ -291,11 +296,6 @@ public class ONode {
 
 					// Receive data packet
 					socket_data.receive(data_packet);
-
-					// Ignore data packets from unknown sources
-					InetAddress incomingIP = data_packet.getAddress();
-					if (!isNeighbour(incomingIP))
-						continue;
 
 					// We need to know the serverIP address
 					byte[] data = data_packet.getData();
@@ -342,19 +342,16 @@ public class ONode {
 
 	}
 
+	/*
 	private boolean isNeighbour(InetAddress ip) {
 		this.neighbourIP_lock.readLock().lock();
 		boolean result = getNeighbours().contains(ip);
 		this.neighbourIP_lock.readLock().unlock();
 		return result;
-	}
+	}*/
 
 	private List<InetAddress> getServers() {
 		return this.addressTable.keySet().stream().collect(Collectors.toList());
-	}
-
-	private boolean isActiveServer(InetAddress serverIP) {
-		return this.addressTable.containsKey(serverIP);
 	}
 
 	private List<InetAddress> getDestinationsByServer(InetAddress serverIP) {
@@ -387,14 +384,14 @@ public class ONode {
 	 * }
 	 * return sources.stream().collect(Collectors.toList());
 	 * }
-	 */
+	 
 
 	private List<InetAddress> getNeighbours() {
 		Set<InetAddress> neighbours = new LinkedHashSet<InetAddress>();
 		neighbours.addAll(getDestinations());
 		neighbours.addAll(getSources());
 		return neighbours.stream().collect(Collectors.toList());
-	}
+	}*/
 
 	private boolean isActiveNeighbour(InetAddress neighbourIP) {
 		for (Map.Entry<InetAddress, List<InetAddress>> entry : serverToActiveNeighbours.entrySet()) {
