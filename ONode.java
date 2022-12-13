@@ -37,10 +37,10 @@ public class ONode {
 			InetAddress serverIP = InetAddress.getByName(ips[i]);
 			i++;
 			InetAddress sourceIP = InetAddress.getByName(ips[i]);
-			i += 2;
+			i ++;
 			List<InetAddress> destinationsIP = new ArrayList<>();
 
-			while (!ips[i].equals(">")) {
+			while (!ips[i].equals("8==D")) {
 				destinationsIP.add(InetAddress.getByName(ips[i]));
 				i++;
 			}
