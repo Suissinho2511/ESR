@@ -332,12 +332,12 @@ public class ONode {
 		s.close();
 	}
 
-	private void addConnection(InetAddress serverIP, InetAddress afterNodeIP, InetAddress beforeNodeIP) {
+	private void addConnection(InetAddress serverIP, InetAddress sourceIP, List<InetAddress> destinationsIP) {
 		this.neighbourIP_lock.writeLock().lock();
-		if (!this.addressTable.containsKey(serverIP)) {
-			this.addressTable.put(serverIP, new HashMap<>());
-		}
-		this.addressTable.get(serverIP).put(afterNodeIP, beforeNodeIP);
+		Map.Entry<InetAddress, List<InetAddress>> conections = new Map.Entry<InetAddress, List<InetAddress>>(sourceIP, destinationsIP);
+	
+		this.addressTable.put(serverIP, new Map.Entry<>());
+		
 		this.neighbourIP_lock.writeLock().unlock();
 
 	}
@@ -358,9 +358,10 @@ public class ONode {
 	}
 
 	private List<InetAddress> getDestinationsByServer(InetAddress serverIP) {
-		return this.addressTable.get(serverIP).keySet().stream().collect(Collectors.toList());
+		return this.addressTable.get(serverIP).getValue();
 	}
 
+	/* 
 	private List<InetAddress> getDestinations() {
 		Set<InetAddress> destinations = new LinkedHashSet<InetAddress>();
 		Collection<Map<InetAddress, InetAddress>> values = this.addressTable.values();
@@ -368,12 +369,13 @@ public class ONode {
 			destinations.addAll(value.keySet());
 		}
 		return destinations.stream().collect(Collectors.toList());
+	}*/
+
+	private InetAddress getSourceByServer(InetAddress serverIP) {
+		return this.addressTable.get(serverIP).getKey();
 	}
 
-	private List<InetAddress> getSourcesByServer(InetAddress serverIP) {
-		return this.addressTable.get(serverIP).values().stream().collect(Collectors.toList());
-	}
-
+	/*
 	private List<InetAddress> getSources() {
 		Set<InetAddress> sources = new LinkedHashSet<InetAddress>();
 		Collection<Map<InetAddress, InetAddress>> values = this.addressTable.values();
@@ -381,7 +383,7 @@ public class ONode {
 			sources.addAll(value.values());
 		}
 		return sources.stream().collect(Collectors.toList());
-	}
+	}*/
 
 	private List<InetAddress> getNeighbours() {
 		Set<InetAddress> neighbours = new LinkedHashSet<InetAddress>();
