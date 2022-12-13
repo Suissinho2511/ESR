@@ -3,7 +3,7 @@
    usage: java Cliente
    adaptado dos originais pela equipa docente de ESR (nenhumas garantias)
    colocar o cliente primeiro a correr que o servidor dispara logo!
-   ---------------------- */
+---------------------- */
 
 import java.io.*;
 import java.net.*;

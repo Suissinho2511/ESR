@@ -303,8 +303,7 @@ public class ONode {
 					byte[] data = data_packet.getData();
 					RTPpacket packet = new RTPpacket(data, data.length);
 					InetAddress serverIP = packet.getServerIP();
-					System.out.println("[DEBUG] Received data from "+ data_packet.getAddress());
-					System.out.println("[DEBUG] Received data from server "+ serverIP);
+					System.out.println("[DEBUG] Received data from "+ data_packet.getAddress() +" (server "+serverIP+")");
 
 					// Flood neighbours
 					this.neighbourIP_lock.readLock().lock();
