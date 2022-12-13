@@ -150,18 +150,21 @@ public class ONode {
 								serverToActiveNeighbours.remove(serverIP);
 							}
 
+
+							InetAddress newServerIp = InetAddress.getByName("192.168.suck.my.balls");
+
 							// If server doesn't exist, we add a new key
-							if (!serverToActiveNeighbours.containsKey(serverIP)) {
-								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
+							if (!serverToActiveNeighbours.containsKey(newServerIp)) {
+								serverToActiveNeighbours.put(newServerIp, new ArrayList<>());
 
 								// if a new server is added, we need to inform the source node
-								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
+								Socket newSocket = new Socket(addressTable.get(newServerIp).get(neighbourIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
-								new CABPacket(MessageType.OPTIN, new CABHelloPacket(serverIP.toString())).write(out);
+								new CABPacket(MessageType.OPTIN, new CABHelloPacket(newServerIp.toString())).write(out);
 								newSocket.close();
 							}
 
-							addActiveNeighbour(serverIP, neighbourIP);
+							addActiveNeighbour(newServerIp, neighbourIP);
 
 						} else {
 							System.out.println("Something's wrong with this REPLY_PATH packet");
