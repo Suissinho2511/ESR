@@ -187,8 +187,11 @@ public class ONode {
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
 
+
 							String message = optinPacket.getMessage();
 							InetAddress serverIP;
+
+							if(isActiveNeighbour(serverIP, neighbourIP)) break;
 
 							if (message.equals("Im a client")) {
 								// if it's a client, then the default server will be the first one
@@ -399,12 +402,8 @@ public class ONode {
 		return neighbours.stream().collect(Collectors.toList());
 	}*/
 
-	private boolean isActiveNeighbour(InetAddress neighbourIP) {
-		for (Map.Entry<InetAddress, List<InetAddress>> entry : serverToActiveNeighbours.entrySet()) {
-			if (entry.getValue().contains(neighbourIP))
-				return true;
-		}
-		return false;
+	private boolean isActiveNeighbour(InetAddress serverIP, InetAddress neighbourIP) {
+		return serverToActiveNeighbours.get(serverIP).contains(neighbourIP);
 	}
 
 	private void addActiveNeighbour(InetAddress serverIP, InetAddress neighbourIP) {
