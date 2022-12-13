@@ -22,8 +22,7 @@ public class ONode {
 
 	private Map<InetAddress, List<InetAddress>> serverToActiveNeighbours;
 
-	// {server , {where to go , where it came from}}
-	private final Map<InetAddress, Map<InetAddress, InetAddress>> addressTable;
+	private final Map<InetAddress, Map.Entry<InetAddress, List<InetAddress>>> addressTable;
 
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
@@ -33,12 +32,21 @@ public class ONode {
 
 		// format: server a(node) b(efore)node server anode bnode...
 		this.addressTable = new HashMap<>();
-		for (int i = 0; i < ips.length; i += 3) {
-			addConnection(
-					InetAddress.getByName(ips[i]),
-					InetAddress.getByName(ips[i + 1]),
-					InetAddress.getByName(ips[i + 2]));
+
+		for (int i = 0; i < ips.length; i++) {
+			InetAddress serverIP = InetAddress.getByName(ips[i]);
+			i++;
+			InetAddress sourceIP = InetAddress.getByName(ips[i]);
+			i += 2;
+			List<InetAddress> destinationsIP = null;
+
+			destinationsIP.add(InetAddress.getByName(ips[i]));
+
+			while(!ips[i].equals(">")){
+
+			}
 		}
+
 
 		System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
 
