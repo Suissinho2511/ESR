@@ -303,16 +303,21 @@ public class ONode {
 					byte[] data = data_packet.getData();
 					RTPpacket packet = new RTPpacket(data, data.length);
 					InetAddress serverIP = packet.getServerIP();
-					System.out.println("[DEBUG] Received data from "+data_packet.getAddress());
+					System.out.println("[DEBUG] Received data from "+ data_packet.getAddress());
+					System.out.println("[DEBUG] Received data from server "+ serverIP);
 
 					// Flood neighbours
 					this.neighbourIP_lock.readLock().lock();
 					// just sends packets to whomever wants
-					for (InetAddress ip : serverToActiveNeighbours.get(serverIP)) {
 
-						DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
-						socket_data.send(out_packet);
-						System.out.println("[DEBUG] Sent data to "+ip);
+					if (serverToActiveNeighbours.get(serverIP) != null){
+
+						for (InetAddress ip : serverToActiveNeighbours.get(serverIP)) {
+
+							DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
+							socket_data.send(out_packet);
+							System.out.println("[DEBUG] Sent data to "+ip);
+						}
 					}
 					this.neighbourIP_lock.readLock().unlock();
 				}
