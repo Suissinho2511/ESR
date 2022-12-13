@@ -120,7 +120,7 @@ public class RTPpacket {
     extension = 0;
     cc = 0;
     marker = 0;
-    ssrc = 0;
+    
 
     // check if total packet size is lower than the header size
     if (packet_size >= HEADER_SIZE) {
@@ -140,6 +140,8 @@ public class RTPpacket {
       sequenceNumber = unsigned_int(header[3]) + 256 * unsigned_int(header[2]);
       timeStamp = unsigned_int(header[7]) + 256 * unsigned_int(header[6]) + 65536 * unsigned_int(header[5])
           + 16777216 * unsigned_int(header[4]);
+      ssrc = unsigned_int(header[11]) + 256 * unsigned_int(header[10]) + 65536 * unsigned_int(header[9])
+      + 16777216 * unsigned_int(header[8]);
     }
   }
 
@@ -220,9 +222,16 @@ public class RTPpacket {
   }
 
   public InetAddress getServerIP() throws UnknownHostException {
-    byte[] bytes = BigInteger.valueOf(ssrc).toByteArray();
+    //byte[] ip = BigInteger.valueOf(ssrc).toByteArray();
+    String ipStr = String.format("%d.%d.%d.%d",
+          (ssrc & 0xff),   
+          (ssrc >> 8 & 0xff),             
+          (ssrc >> 16 & 0xff),    
+          (ssrc >> 24 & 0xff));
+    
+    InetAddress result = InetAddress.getByName(ipStr);
     System.out.println("here");
-    return InetAddress.getByAddress(bytes);
+    return result;
   }
 
   // return the unsigned value of 8-bit integer nb
