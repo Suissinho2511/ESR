@@ -40,10 +40,12 @@ public class ONode {
 			i ++;
 			List<InetAddress> destinationsIP = new ArrayList<>();
 
-			while (!ips[i].equals("8==D")) {
+			while (!ips[i].equals("fim")) {
 				destinationsIP.add(InetAddress.getByName(ips[i]));
 				i++;
 			}
+			i++;
+
 			addConnection(serverIP, sourceIP, destinationsIP);
 		}
 
@@ -301,7 +303,7 @@ public class ONode {
 					byte[] data = data_packet.getData();
 					RTPpacket packet = new RTPpacket(data, data.length);
 					InetAddress serverIP = packet.getServerIP();
-					// System.out.println("[DEBUG] Received data from "+incoming_ip);
+					System.out.println("[DEBUG] Received data from "+data_packet.getAddress());
 
 					// Flood neighbours
 					this.neighbourIP_lock.readLock().lock();
@@ -310,7 +312,7 @@ public class ONode {
 
 						DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
 						socket_data.send(out_packet);
-						// System.out.println("[DEBUG] Sent data to "+ip);
+						System.out.println("[DEBUG] Sent data to "+ip);
 					}
 					this.neighbourIP_lock.readLock().unlock();
 				}
