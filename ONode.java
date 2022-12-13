@@ -187,9 +187,6 @@ public class ONode {
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
 
-							if (!isActiveNeighbour(neighbourIP))
-								break;
-
 							String message = optinPacket.getMessage();
 							InetAddress serverIP;
 
@@ -220,6 +217,9 @@ public class ONode {
 					case OPTOUT:
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
+
+							if (!isActiveNeighbour(neighbourIP))
+								break;
 
 							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
 							removeActiveNeighbour(serverIP, neighbourIP);
