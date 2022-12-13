@@ -146,15 +146,16 @@ public class Cliente {
             Long packetDelay = controlPacket.getDelay();
 
             if (bestServer == null || bestDelay > packetDelay) {
-              bestServer = packetServer;
-              bestDelay = packetDelay;
 
-			  // append new best server
+			  // append old best server
 			  controlPacket.addNode(bestServer);
 			  packet.message = controlPacket;
               packet.type = MessageType.REPLY_CHOOSE_SERVER;
               DataOutputStream out = new DataOutputStream(socket.getOutputStream());
               packet.write(out);
+
+              bestServer = packetServer;
+              bestDelay = packetDelay;
 
             } else if (bestServer == packetServer) {
               bestDelay = packetDelay;

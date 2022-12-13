@@ -137,7 +137,7 @@ public class ONode {
 						if (packet.message instanceof CABControlPacket) {
 							CABControlPacket replyPacket = (CABControlPacket) packet.message;
 
-							InetAddress serverIP = replyPacket.getServer();
+							InetAddress serverIP = replyPacket.getLast().getKey();
 
 							removeActiveNeighbour(serverIP, neighbourIP);
 
@@ -151,7 +151,7 @@ public class ONode {
 							}
 
 
-							InetAddress newServerIp = replyPacket.getLast().getKey();
+							InetAddress newServerIp = replyPacket.getServer();
 
 							// If server doesn't exist, we add a new key
 							if (!serverToActiveNeighbours.containsKey(newServerIp)) {
