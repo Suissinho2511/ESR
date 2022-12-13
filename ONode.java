@@ -21,10 +21,9 @@ import java.util.stream.Collectors;
 public class ONode {
 
 	private Map<InetAddress, List<InetAddress>> serverToActiveNeighbours;
-	private List<InetAddress> neighboursIP;
 
 	//{server , {where to go , where it came from}}
-	private Map<InetAddress, Map<InetAddress, InetAddress>> addressTable;
+	private final Map<InetAddress, Map<InetAddress, InetAddress>> addressTable;
 
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
@@ -59,6 +58,7 @@ public class ONode {
 			System.out.println("[INFO] Control server socket created");
 
 			// Connect to neighbours
+			/*
 			for (InetAddress ip : this.neighboursIP) {
 				try {
 					sendPing(ip, "Hello!");
@@ -66,7 +66,7 @@ public class ONode {
 				} catch (Exception offline) {
 					System.out.println("[WARNING] Neighbour " + ip.toString() + " offline! (May be an endpoint)");
 				}
-			}
+			}*/
 
 			// Control thread for server socket
 			newControlThread().start();
@@ -260,21 +260,22 @@ public class ONode {
 					// Receive data packet
 					socket_data.receive(data_packet);
 
+
 					// Ignore data packets from unknown sources
-					InetAddress incoming_ip = data_packet.getAddress();
-					if (!isNeighbour(incoming_ip))
+					InetAddress incomingIP = data_packet.getAddress();
+					if (!isNeighbour(incomingIP))
 						continue;
 
+					//We need to know the serverIP address
 					byte[] data = data_packet.getData();
+					RTPpacket packet = new RTPpacket(data, data.length);
+					InetAddress serverIP = packet.getServerIP();
 					// System.out.println("[DEBUG] Received data from "+incoming_ip);
 
 					// Flood neighbours
 					this.neighbourIP_lock.readLock().lock();
-					for (InetAddress ip : this.neighboursIP) {
-
-						// (except the one who sent packet)
-						if (ip.equals(incoming_ip))
-							continue;
+					// just sends packets to whomever wants
+					for (InetAddress ip : getDestinationsByServer(serverIP)) {
 
 						DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
 						socket_data.send(out_packet);
@@ -318,6 +319,10 @@ public class ONode {
 
 	private List<InetAddress> getServers(){
 		return this.addressTable.keySet().stream().toList();
+	}
+
+	private boolean isActiveServer(InetAddress serverIP){
+		return this.addressTable.containsKey(serverIP);
 	}
 
 	private  List<InetAddress> getDestinationsByServer(InetAddress serverIP){

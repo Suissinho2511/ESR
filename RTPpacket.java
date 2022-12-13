@@ -1,5 +1,9 @@
 //class RTPpacket
 
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 public class RTPpacket {
 
   // size of the RTP header:
@@ -7,15 +11,42 @@ public class RTPpacket {
 
   // Fields that compose the RTP header
   // TODO descrição dos campos
+  //This 2-bit field defines version number.
   public int version;
-
+  // The length of this field is 1-bit. If value is 1,
+  // then it denotes presence of padding at end of packet and
+  // if value is 0, then there is no padding.
   public int padding;
+  // The length of this field is also 1-bit. If value of this field
+  // is set to 1, then its indicates an extra extension header between
+  // data and basic header and if value is 0 then, there is no extra extension.
   public int extension;
+  // Contributor count – This 4-bit field indicates number of contributors.
+  // Here maximum possible number of contributor is 15 as a 4-bit field
+  // can allow number from 0 to 15.
   public int cc;
+  // The length of this field is 1-bit, and it is used as end marker by
+  // application to indicate end of its data.
   public int marker;
+  // This field is of length 7-bit to indicate type of payload.
+  // We list applications of some common types of payload.
   public int payloadType;
+  // The length of this field is 16 bits. It is used to give
+  // serial numbers to RTP packets. It helps in sequencing.
+  // The sequence number for first packet is given a random number and
+  // then every next packet’s sequence number is incremented by 1.
+  // This field mainly helps in checking lost packets and order mismatch.
   public int sequenceNumber;
+  // The length of this field is 32-bit. It is used to find relationship between
+  // times of different RTP packets. The timestamp for first packet is given randomly
+  // and then time stamp for next packets given by sum of previous timestamp
+  // and time taken to produce first byte of current packet. The value of 1 clock
+  // tick is varying from application to application.
   public int timeStamp;
+  // This is a 32-bit field used to identify and define the source.
+  // The value for this source identifier is a random number that
+  // is chosen by source itself. This mainly helps in solving conflict
+  // arises when two sources started with the same sequencing number.
   public int ssrc;
 
   // Bitstream of the RTP header
@@ -29,14 +60,14 @@ public class RTPpacket {
   // --------------------------
   // Constructor of an RTPpacket object from header fields and payload bitstream
   // --------------------------
-  public RTPpacket(int PType, int Framenb, int Time, byte[] data, int data_length) {
+  public RTPpacket(int PType, int Framenb, int Time, byte[] data, int data_length, int serverIP) {
     // fill by default header fields:
     this.version = 2;
     padding = 0;
     extension = 0;
     cc = 0;
     marker = 0;
-    ssrc = 0;
+    ssrc = serverIP;
 
     // fill changing header fields:
     sequenceNumber = Framenb;
@@ -186,6 +217,12 @@ public class RTPpacket {
         + ", SequenceNumber: " + sequenceNumber
         + ", TimeStamp: " + timeStamp);
   }
+
+  public InetAddress getServerIP() throws UnknownHostException {
+    byte[] bytes = BigInteger.valueOf(ssrc).toByteArray();
+    return InetAddress.getByAddress(bytes);
+  }
+
 
   // return the unsigned value of 8-bit integer nb
   static int unsigned_int(int nb) {
