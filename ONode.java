@@ -193,8 +193,6 @@ public class ONode {
 							String message = optinPacket.getMessage();
 							InetAddress serverIP;
 
-							if(isActiveNeighbour(serverIP, neighbourIP)) break;
-
 							if (message.equals("Im a client")) {
 								// if it's a client, then the default server will be the first one
 								serverIP = getServers().get(0);
@@ -202,6 +200,10 @@ public class ONode {
 								// if it's a node, then its requesting a specific server
 								serverIP = InetAddress.getByName(message);
 							}
+							
+
+							if(isActiveNeighbour(serverIP, neighbourIP))
+								break;
 
 							if (!serverToActiveNeighbours.containsKey(serverIP)) {
 								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
@@ -226,10 +228,11 @@ public class ONode {
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
 
-							if (!isActiveNeighbour(neighbourIP))
+							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
+							
+							if (!isActiveNeighbour(serverIP, neighbourIP))
 								break;
 
-							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
 							removeActiveNeighbour(serverIP, neighbourIP);
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
 								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
@@ -317,14 +320,10 @@ public class ONode {
 					this.neighbourIP_lock.readLock().lock();
 					// just sends packets to whomever wants
 
-					System.out.println("here1");
-					System.out.println(serverIP);
 					if (serverToActiveNeighbours.get(serverIP) != null){
 
-						System.out.println("here2");
 						for (InetAddress ip : serverToActiveNeighbours.get(serverIP)) {
 
-							System.out.println("here3");
 							DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
 							socket_data.send(out_packet);
 							System.out.println("[DEBUG] Sent data to "+ip);
