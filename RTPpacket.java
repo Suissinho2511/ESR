@@ -230,7 +230,6 @@ public class RTPpacket {
           (ssrc & 0xff));
     
     InetAddress result = InetAddress.getByName(ipStr);
-    System.out.println("here");
     return result;
   }
 

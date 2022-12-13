@@ -114,6 +114,7 @@ public class ONode {
 						break;
 
 					case CHOOSE_SERVER:
+						System.out.println("[DEBUG] Received CHOOSE_SERVER from "+ neighbourIP.toString());
 						if (packet.message instanceof CABControlPacket) {
 							CABControlPacket controlPacket = (CABControlPacket) packet.message;
 
@@ -134,12 +135,9 @@ public class ONode {
 								newSocket.close();
 							}
 
-							
 
 
 
-							System.out.println("[DEBUG] Received probe path request from "
-									+ neighbourIP.toString() + ". Spreading...");
 						} else {
 							System.out.println("Something's wrong with this CHOOSE_SERVER packet");
 						}
@@ -147,6 +145,7 @@ public class ONode {
 						break;
 
 					case REPLY_CHOOSE_SERVER:
+						System.out.println("[DEBUG] Received REPLY_CHOOSE_SERVER from "+ neighbourIP.toString());
 						// Reply path
 						if (packet.message instanceof CABControlPacket) {
 							CABControlPacket replyPacket = (CABControlPacket) packet.message;
@@ -158,7 +157,7 @@ public class ONode {
 							// If server stops being active, then we need to opt-out in previous node
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
 								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
+								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 								new CABPacket(MessageType.OPTOUT, new CABHelloPacket(serverIP.toString())).write(out);
 								newSocket.close();
 								serverToActiveNeighbours.remove(serverIP);
@@ -172,18 +171,21 @@ public class ONode {
 
 								// if a new server is added, we need to inform the source node
 								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
+								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 								new CABPacket(MessageType.OPTIN, new CABHelloPacket(newServerIp.toString())).write(out);
 								newSocket.close();
 							}
 
 							addActiveNeighbour(newServerIp, neighbourIP);
+							
+							System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
 
 						} else {
 							System.out.println("Something's wrong with this REPLY_PATH packet");
 						}
 						break;
 					case OPTIN:
+						System.out.println("[DEBUG] Received OPTIN from "+ neighbourIP.toString());
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
 
@@ -207,17 +209,20 @@ public class ONode {
 								// if a new server is added, we need to send this reply to before node of this
 								// thing
 								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
+								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 								new CABPacket(MessageType.OPTIN, optinPacket).write(out);
 								newSocket.close();
 							}
 							addActiveNeighbour(serverIP, neighbourIP);
+
+							System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
 
 						} else {
 							System.out.println("Something's wrong with this OPT-IN packet");
 						}
 						break;
 					case OPTOUT:
+						System.out.println("[DEBUG] Received OPTOUT from "+ neighbourIP.toString());
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
 
@@ -228,7 +233,7 @@ public class ONode {
 							removeActiveNeighbour(serverIP, neighbourIP);
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
 								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
+								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 								new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
 								newSocket.close();
 							}
@@ -312,10 +317,14 @@ public class ONode {
 					this.neighbourIP_lock.readLock().lock();
 					// just sends packets to whomever wants
 
+					System.out.println("here1");
+					System.out.println(serverIP);
 					if (serverToActiveNeighbours.get(serverIP) != null){
 
+						System.out.println("here2");
 						for (InetAddress ip : serverToActiveNeighbours.get(serverIP)) {
 
+							System.out.println("here3");
 							DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
 							socket_data.send(out_packet);
 							System.out.println("[DEBUG] Sent data to "+ip);
