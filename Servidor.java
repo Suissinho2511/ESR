@@ -126,7 +126,7 @@ public class Servidor extends JFrame implements ActionListener {
         int image_length = video.getnextframe(sBuf);
 
         // Builds an RTPpacket object containing the frame
-        InetAddress ip = InetAddress.getLocalHost();
+        InetAddress ip = RTPsocket.getInetAddress();
         System.out.println("IP in string format: " + ip.getHostAddress());
         int serverIP = 0;
         for (byte b : ip.getAddress()) {
