@@ -127,7 +127,9 @@ public class Cliente {
       switch (packet.type) {
         // Will just print the message
         case HELLO:
-          if (packet.message instanceof CABHelloPacket helloPacket) {
+          if (packet.message instanceof CABHelloPacket) {
+			CABHelloPacket helloPacket = (CABHelloPacket) packet.message;
+			
             String str = helloPacket.getMessage();
             System.out.println("[DEBUG] Received ping message from " + socket.getInetAddress().toString()
                 + ":\n" + str);
@@ -138,7 +140,8 @@ public class Cliente {
 
         // Will compare with current server and reply if anything changed
         case CHOOSE_SERVER:
-          if (packet.message instanceof CABControlPacket controlPacket) {
+          if (packet.message instanceof CABControlPacket) {
+			CABControlPacket controlPacket = (CABControlPacket) packet.message;
             InetAddress packetServer = controlPacket.getServer();
             Long packetDelay = controlPacket.getDelay();
 

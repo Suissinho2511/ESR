@@ -95,7 +95,9 @@ public class ONode {
 				switch (packet.type) {
 
 					case HELLO:
-						if (packet.message instanceof CABHelloPacket helloPacket) {
+						if (packet.message instanceof CABHelloPacket) {
+							CABHelloPacket helloPacket = (CABHelloPacket) packet.message;
+
 							String str = helloPacket.getMessage();
 							System.out.println("[DEBUG] Received ping message from " + neighbourIP.toString()
 									+ ":\n" + str);
@@ -105,9 +107,12 @@ public class ONode {
 						break;
 
 					case CHOOSE_SERVER:
-						if (packet.message instanceof CABControlPacket controlPacket &&
-								controlPacket.getAvailableJumps() > 0
-								&& !controlPacket.getPathAsInetAddress().contains(s.getLocalAddress())) {
+						if (packet.message instanceof CABControlPacket) {
+							CABControlPacket controlPacket = (CABControlPacket) packet.message;
+							
+							if (controlPacket.getAvailableJumps() <= 0
+								|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
+								break;
 
 							controlPacket.addNode(s.getLocalAddress());
 
@@ -129,7 +134,9 @@ public class ONode {
 
 					case REPLY_CHOOSE_SERVER:
 						// Reply path
-						if (packet.message instanceof CABControlPacket replyPacket) {
+						if (packet.message instanceof CABControlPacket) {
+							CABControlPacket replyPacket = (CABControlPacket) packet.message;
+
 							InetAddress serverIP = replyPacket.getServer();
 
 							removeActiveNeighbour(serverIP, neighbourIP);
@@ -161,8 +168,10 @@ public class ONode {
 						}
 						break;
 					case OPTIN:
-						if (packet.message instanceof CABHelloPacket optinPacket &&
-								!isActiveNeighbour(neighbourIP)) {
+						if (packet.message instanceof CABHelloPacket) {
+							CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
+							
+							if (!isActiveNeighbour(neighbourIP)) break;
 
 							String message = optinPacket.getMessage();
 							InetAddress serverIP;
@@ -192,7 +201,9 @@ public class ONode {
 						}
 						break;
 					case OPTOUT:
-						if (packet.message instanceof CABHelloPacket optoutPacket) {
+					if (packet.message instanceof CABHelloPacket) {
+						CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
+
 							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
 							removeActiveNeighbour(serverIP, neighbourIP);
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
@@ -328,7 +339,7 @@ public class ONode {
 	}
 
 	private List<InetAddress> getServers() {
-		return this.addressTable.keySet().stream().toList();
+		return this.addressTable.keySet().stream().collect(Collectors.toList());
 	}
 
 	private boolean isActiveServer(InetAddress serverIP) {
@@ -336,7 +347,7 @@ public class ONode {
 	}
 
 	private List<InetAddress> getDestinationsByServer(InetAddress serverIP) {
-		return this.addressTable.get(serverIP).keySet().stream().toList();
+		return this.addressTable.get(serverIP).keySet().stream().collect(Collectors.toList());
 	}
 
 	private List<InetAddress> getDestinations() {
@@ -345,11 +356,11 @@ public class ONode {
 		for (Map<InetAddress, InetAddress> value : values) {
 			destinations.addAll(value.keySet());
 		}
-		return destinations.stream().toList();
+		return destinations.stream().collect(Collectors.toList());
 	}
 
 	private List<InetAddress> getSourcesByServer(InetAddress serverIP) {
-		return this.addressTable.get(serverIP).values().stream().toList();
+		return this.addressTable.get(serverIP).values().stream().collect(Collectors.toList());
 	}
 
 	private List<InetAddress> getSources() {
@@ -358,14 +369,14 @@ public class ONode {
 		for (Map<InetAddress, InetAddress> value : values) {
 			sources.addAll(value.values());
 		}
-		return sources.stream().toList();
+		return sources.stream().collect(Collectors.toList());
 	}
 
 	private List<InetAddress> getNeighbours() {
 		Set<InetAddress> neighbours = new LinkedHashSet<InetAddress>();
 		neighbours.addAll(getDestinations());
 		neighbours.addAll(getSources());
-		return neighbours.stream().toList();
+		return neighbours.stream().collect(Collectors.toList());
 	}
 
 	private boolean isActiveNeighbour(InetAddress neighbourIP) {

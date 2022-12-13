@@ -45,7 +45,8 @@ public class CABPacket {
 			case HELLO:
 			case OPTIN:
 			case OPTOUT:
-				if (message instanceof CABHelloPacket helloMessage) {
+				if (message instanceof CABHelloPacket) {
+					CABHelloPacket helloMessage = (CABHelloPacket) message;
 					helloMessage.write(out);
 				}
 				break;
@@ -53,7 +54,8 @@ public class CABPacket {
 			case REPLY_CHOOSE_SERVER:
 			case TOPOLOGY:
 			case REPLY_TOPOLOGY:
-				if (message instanceof CABControlPacket controlMessage) {
+				if (message instanceof CABControlPacket) {
+					CABControlPacket controlMessage = (CABControlPacket) message;
 					controlMessage.write(out);
 				}
 				break;
