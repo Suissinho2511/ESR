@@ -22,7 +22,7 @@ public class ONode {
 
 	private Map<InetAddress, List<InetAddress>> serverToActiveNeighbours;
 
-	//{server , {where to go , where it came from}}
+	// {server , {where to go , where it came from}}
 	private final Map<InetAddress, Map<InetAddress, InetAddress>> addressTable;
 
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
@@ -31,14 +31,13 @@ public class ONode {
 
 	public ONode(String[] ips) throws UnknownHostException {
 
-		//format: server a(node) b(efore)node server anode bnode...
+		// format: server a(node) b(efore)node server anode bnode...
 		this.addressTable = new HashMap<>();
-		for(int i = 0; i < ips.length; i+=3){
+		for (int i = 0; i < ips.length; i += 3) {
 			addConnection(
 					InetAddress.getByName(ips[i]),
-					InetAddress.getByName(ips[i+1]),
-					InetAddress.getByName(ips[i+2])
-					);
+					InetAddress.getByName(ips[i + 1]),
+					InetAddress.getByName(ips[i + 2]));
 		}
 
 		System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
@@ -59,14 +58,16 @@ public class ONode {
 
 			// Connect to neighbours
 			/*
-			for (InetAddress ip : this.neighboursIP) {
-				try {
-					sendPing(ip, "Hello!");
-					System.out.println("[INFO] Connected to neighbour " + ip.toString());
-				} catch (Exception offline) {
-					System.out.println("[WARNING] Neighbour " + ip.toString() + " offline! (May be an endpoint)");
-				}
-			}*/
+			 * for (InetAddress ip : this.neighboursIP) {
+			 * try {
+			 * sendPing(ip, "Hello!");
+			 * System.out.println("[INFO] Connected to neighbour " + ip.toString());
+			 * } catch (Exception offline) {
+			 * System.out.println("[WARNING] Neighbour " + ip.toString() +
+			 * " offline! (May be an endpoint)");
+			 * }
+			 * }
+			 */
 
 			// Control thread for server socket
 			newControlThread().start();
@@ -133,8 +134,8 @@ public class ONode {
 
 							removeActiveNeighbour(serverIP, neighbourIP);
 
-							//If server stops being active, then we need to opt-out in previous node
-							if(serverToActiveNeighbours.get(serverIP).isEmpty()){
+							// If server stops being active, then we need to opt-out in previous node
+							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
 								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTOUT, new CABHelloPacket(serverIP.toString())).write(out);
@@ -143,10 +144,10 @@ public class ONode {
 							}
 
 							// If server doesn't exist, we add a new key
-							if(!serverToActiveNeighbours.containsKey(serverIP)){
+							if (!serverToActiveNeighbours.containsKey(serverIP)) {
 								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
 
-								//if a new server is added, we need to inform the source node
+								// if a new server is added, we need to inform the source node
 								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTIN, new CABHelloPacket(serverIP.toString())).write(out);
@@ -154,7 +155,6 @@ public class ONode {
 							}
 
 							addActiveNeighbour(serverIP, neighbourIP);
-
 
 						} else {
 							System.out.println("Something's wrong with this REPLY_PATH packet");
@@ -167,19 +167,19 @@ public class ONode {
 							String message = optinPacket.getMessage();
 							InetAddress serverIP;
 
-							if (message.equals("Im a client")){
-								//if it's a client, then the default server will be the first one
+							if (message.equals("Im a client")) {
+								// if it's a client, then the default server will be the first one
 								serverIP = getServers().get(0);
-							}
-							else {
-								//if it's a node, then its requesting a specific server
+							} else {
+								// if it's a node, then its requesting a specific server
 								serverIP = InetAddress.getByName(message);
 							}
 
-							if(!serverToActiveNeighbours.containsKey(serverIP)){
+							if (!serverToActiveNeighbours.containsKey(serverIP)) {
 								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
 
-								//if a new server is added, we need to send this reply to before node of this thing
+								// if a new server is added, we need to send this reply to before node of this
+								// thing
 								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTIN, optinPacket).write(out);
@@ -195,7 +195,7 @@ public class ONode {
 						if (packet.message instanceof CABHelloPacket optoutPacket) {
 							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
 							removeActiveNeighbour(serverIP, neighbourIP);
-							if(serverToActiveNeighbours.get(serverIP).isEmpty()){
+							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
 								Socket newSocket = new Socket(addressTable.get(serverIP).get(neighbourIP), 5001);
 								DataOutputStream out = (DataOutputStream) newSocket.getOutputStream();
 								new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
@@ -219,9 +219,9 @@ public class ONode {
 						.println("[ERROR] Control thread for neighbour " + s.getInetAddress().toString() + " crashed!");
 				System.out.println(e);
 
-				//this.neighbourIP_lock.writeLock().lock();
-				//this.neighboursIP.remove(s.getInetAddress());
-				//this.neighbourIP_lock.writeLock().unlock();
+				// this.neighbourIP_lock.writeLock().lock();
+				// this.neighboursIP.remove(s.getInetAddress());
+				// this.neighbourIP_lock.writeLock().unlock();
 				// System.exit(-1);
 			}
 		});
@@ -238,13 +238,13 @@ public class ONode {
 
 					// New neighbour: (Vamos considerar algo estático na topologia)
 					/*
-					if (!isNeighbour(ip)) {
-						System.out.println("[INFO] New neighbour: " + ip.toString());
-						addNeighbour(ip);
-						System.out.println("[DEBUG] Neighbours:\n" + neighboursIP.toString());
-						sendPing(ip, "Hello!");
-					}
-					*/
+					 * if (!isNeighbour(ip)) {
+					 * System.out.println("[INFO] New neighbour: " + ip.toString());
+					 * addNeighbour(ip);
+					 * System.out.println("[DEBUG] Neighbours:\n" + neighboursIP.toString());
+					 * sendPing(ip, "Hello!");
+					 * }
+					 */
 
 					// Process
 					newNeighbourThread(new_socket).start();
@@ -271,13 +271,12 @@ public class ONode {
 					// Receive data packet
 					socket_data.receive(data_packet);
 
-
 					// Ignore data packets from unknown sources
 					InetAddress incomingIP = data_packet.getAddress();
 					if (!isNeighbour(incomingIP))
 						continue;
 
-					//We need to know the serverIP address
+					// We need to know the serverIP address
 					byte[] data = data_packet.getData();
 					RTPpacket packet = new RTPpacket(data, data.length);
 					InetAddress serverIP = packet.getServerIP();
@@ -313,7 +312,7 @@ public class ONode {
 
 	private void addConnection(InetAddress serverIP, InetAddress afterNodeIP, InetAddress beforeNodeIP) {
 		this.neighbourIP_lock.writeLock().lock();
-		if (!this.addressTable.containsKey(serverIP)){
+		if (!this.addressTable.containsKey(serverIP)) {
 			this.addressTable.put(serverIP, new HashMap<>());
 		}
 		this.addressTable.get(serverIP).put(afterNodeIP, beforeNodeIP);
@@ -328,67 +327,64 @@ public class ONode {
 		return result;
 	}
 
-	private List<InetAddress> getServers(){
+	private List<InetAddress> getServers() {
 		return this.addressTable.keySet().stream().toList();
 	}
 
-	private boolean isActiveServer(InetAddress serverIP){
+	private boolean isActiveServer(InetAddress serverIP) {
 		return this.addressTable.containsKey(serverIP);
 	}
 
-	private  List<InetAddress> getDestinationsByServer(InetAddress serverIP){
+	private List<InetAddress> getDestinationsByServer(InetAddress serverIP) {
 		return this.addressTable.get(serverIP).keySet().stream().toList();
 	}
 
-	private  List<InetAddress> getDestinations(){
+	private List<InetAddress> getDestinations() {
 		Set<InetAddress> destinations = new LinkedHashSet<InetAddress>();
 		Collection<Map<InetAddress, InetAddress>> values = this.addressTable.values();
-		for (Map<InetAddress, InetAddress> value : values){
+		for (Map<InetAddress, InetAddress> value : values) {
 			destinations.addAll(value.keySet());
 		}
 		return destinations.stream().toList();
 	}
 
-	private  List<InetAddress> getSourcesByServer(InetAddress serverIP){
+	private List<InetAddress> getSourcesByServer(InetAddress serverIP) {
 		return this.addressTable.get(serverIP).values().stream().toList();
 	}
 
-	private  List<InetAddress> getSources(){
+	private List<InetAddress> getSources() {
 		Set<InetAddress> sources = new LinkedHashSet<InetAddress>();
 		Collection<Map<InetAddress, InetAddress>> values = this.addressTable.values();
-		for (Map<InetAddress, InetAddress> value : values){
+		for (Map<InetAddress, InetAddress> value : values) {
 			sources.addAll(value.values());
 		}
 		return sources.stream().toList();
 	}
 
-	private  List<InetAddress> getNeighbours(){
+	private List<InetAddress> getNeighbours() {
 		Set<InetAddress> neighbours = new LinkedHashSet<InetAddress>();
 		neighbours.addAll(getDestinations());
 		neighbours.addAll(getSources());
 		return neighbours.stream().toList();
 	}
 
-	private boolean isActiveNeighbour(InetAddress neighbourIP){
+	private boolean isActiveNeighbour(InetAddress neighbourIP) {
 		for (Map.Entry<InetAddress, List<InetAddress>> entry : serverToActiveNeighbours.entrySet()) {
-			if(entry.getValue().contains(neighbourIP)) return true;
+			if (entry.getValue().contains(neighbourIP))
+				return true;
 		}
 		return false;
 	}
 
-
-	private void addActiveNeighbour(InetAddress serverIP, InetAddress neighbourIP){
+	private void addActiveNeighbour(InetAddress serverIP, InetAddress neighbourIP) {
 		serverToActiveNeighbours.get(serverIP).add(neighbourIP);
 	}
 
-
-	private void removeActiveNeighbour(InetAddress serverIP, InetAddress neighbourIP){
+	private void removeActiveNeighbour(InetAddress serverIP, InetAddress neighbourIP) {
 		serverToActiveNeighbours.get(serverIP).remove(neighbourIP);
 	}
 
-
 	public static void main(String[] args) throws UnknownHostException {
-
 
 		new ONode(args);
 	}

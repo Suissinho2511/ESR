@@ -11,7 +11,7 @@ public class RTPpacket {
 
   // Fields that compose the RTP header
   // TODO descrição dos campos
-  //This 2-bit field defines version number.
+  // This 2-bit field defines version number.
   public int version;
   // The length of this field is 1-bit. If value is 1,
   // then it denotes presence of padding at end of packet and
@@ -38,7 +38,8 @@ public class RTPpacket {
   // This field mainly helps in checking lost packets and order mismatch.
   public int sequenceNumber;
   // The length of this field is 32-bit. It is used to find relationship between
-  // times of different RTP packets. The timestamp for first packet is given randomly
+  // times of different RTP packets. The timestamp for first packet is given
+  // randomly
   // and then time stamp for next packets given by sum of previous timestamp
   // and time taken to produce first byte of current packet. The value of 1 clock
   // tick is varying from application to application.
@@ -222,8 +223,6 @@ public class RTPpacket {
     byte[] bytes = BigInteger.valueOf(ssrc).toByteArray();
     return InetAddress.getByAddress(bytes);
   }
-
-  
 
   // return the unsigned value of 8-bit integer nb
   static int unsigned_int(int nb) {

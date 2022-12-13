@@ -50,6 +50,7 @@ public class CABControlPacket {
     public InetAddress getServer() {
         return getFirst().getKey();
     }
+
     public int getAvailableJumps() {
         return this.availableJumps;
     }

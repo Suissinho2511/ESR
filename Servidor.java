@@ -53,10 +53,9 @@ public class Servidor extends JFrame implements ActionListener {
 
     this.socketControl = new ServerSocket(5001);
 
-
-    //TopologyConstructor(InetAddress.getByName(argv));
-    //controlSendThread(new Socket(argv, 5001)).start();
-    //System.out.println("ola");
+    // TopologyConstructor(InetAddress.getByName(argv));
+    // controlSendThread(new Socket(argv, 5001)).start();
+    // System.out.println("ola");
 
     // init para a parte do servidor
     sTimer = new Timer(FRAME_PERIOD, this); // init Timer para servidor
@@ -101,7 +100,6 @@ public class Servidor extends JFrame implements ActionListener {
     // get video filename to request:
     VideoFileName = "movie.Mjpeg";
 
-
     File file = new File(VideoFileName);
     if (file.exists()) {
       // Create a Main object
@@ -131,8 +129,7 @@ public class Servidor extends JFrame implements ActionListener {
         InetAddress ip = InetAddress.getLocalHost();
         System.out.println("IP in string format: " + ip.getHostAddress());
         int serverIP = 0;
-        for (byte b: ip.getAddress())
-        {
+        for (byte b : ip.getAddress()) {
           serverIP = serverIP << 8 | (b & 0xFF);
         }
         System.out.println("IP in int format: " + serverIP);

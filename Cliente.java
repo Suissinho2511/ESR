@@ -52,7 +52,7 @@ public class Cliente {
   // --------------------------
   // Constructor
   // --------------------------
-  public Cliente(InetAddress bestOption) {
+  public Cliente() {
 
     // build GUI
     // --------------------------
@@ -92,7 +92,7 @@ public class Cliente {
 
     // init para a parte do cliente
     // --------------------------
-    cTimer = new Timer(20, new clientTimerListener(bestOption));
+    cTimer = new Timer(20, new clientTimerListener());
     cTimer.setInitialDelay(0);
     cTimer.setCoalesce(true);
     cBuf = new byte[15000]; // allocate enough memory for the buffer used to receive data from the server
@@ -111,21 +111,7 @@ public class Cliente {
   // ------------------------------------
   public static void main(String argv[]) throws Exception {
     // send SETUP message to the server
-    HashMap<InetAddress, Long> options = new HashMap<InetAddress, Long>();
-    for (String ip : argv)
-      new Thread(() -> {
-        try {
-
-          // sendControlPacket(InetAddress.getByName(s));
-          // Long time = receiveControlPacket();
-          // options.put(InetAddress.getByName(s), time);
-        } catch (Exception e) {
-          System.out.println("Cliente: erro no main: " + e.getMessage());
-        }
-      }).start();
-    InetAddress bestOption = Collections.min(options.entrySet(), Map.Entry.comparingByValue()).getKey();
-
-    Cliente t = new Cliente(bestOption);
+    Cliente t = new Cliente();
     controlPackets();
   }
 
@@ -254,12 +240,6 @@ public class Cliente {
 
   class clientTimerListener implements ActionListener {
 
-    private InetAddress bestOption;
-
-    public clientTimerListener(InetAddress bestOption) {
-      this.bestOption = bestOption;
-    }
-
     public void actionPerformed(ActionEvent e) {
 
       // Construct a DatagramPacket to receive data from the UDP socket
@@ -268,13 +248,6 @@ public class Cliente {
       try {
         // receive the DP from the socket:
         RTPsocket.receive(rcvdp);
-
-        // wait... this will never happen, since it will just receive from the best
-        // option
-        if (!rcvdp.getAddress().equals(bestOption)) {
-          System.out.println("Cliente: Pacote recebido de " + rcvdp.getAddress() + " ignorado");
-          return;
-        }
 
         // create an RTPpacket object from the DP
         RTPpacket rtp_packet = new RTPpacket(rcvdp.getData(), rcvdp.getLength());
