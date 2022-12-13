@@ -33,17 +33,17 @@ public class ONode {
 		// format: server a(node) b(efore)node server anode bnode...
 		this.addressTable = new HashMap<>();
 
-		for (int i = 0; i < ips.length; i++) {
+		// Just for etapa 3
+		for (int i = 0; i < ips.length; ) {
 			InetAddress serverIP = InetAddress.getByName(ips[i]);
 			i++;
 			InetAddress sourceIP = InetAddress.getByName(ips[i]);
 			i += 2;
 			List<InetAddress> destinationsIP = null;
 
-			destinationsIP.add(InetAddress.getByName(ips[i]));
-
 			while(!ips[i].equals(">")){
-
+				destinationsIP.add(InetAddress.getByName(ips[i]));
+				i++;
 			}
 		}
 
