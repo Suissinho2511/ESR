@@ -40,7 +40,7 @@ public class ONode {
 			i ++;
 			List<InetAddress> destinationsIP = new ArrayList<>();
 
-			while (!ips[i].equals("8==D")) {
+			while (!ips[i].equals("fim")) {
 				destinationsIP.add(InetAddress.getByName(ips[i]));
 				i++;
 			}
