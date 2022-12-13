@@ -202,8 +202,6 @@ public class ONode {
 							}
 							
 
-							if(isActiveNeighbour(serverIP, neighbourIP))
-								break;
 
 							if (!serverToActiveNeighbours.containsKey(serverIP)) {
 								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
@@ -215,7 +213,9 @@ public class ONode {
 								new CABPacket(MessageType.OPTIN, optinPacket).write(out);
 								newSocket.close();
 							}
-							addActiveNeighbour(serverIP, neighbourIP);
+							
+							if(!isActiveNeighbour(serverIP, neighbourIP))
+								addActiveNeighbour(serverIP, neighbourIP);
 
 							System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
 
@@ -411,6 +411,7 @@ public class ONode {
 	}*/
 
 	private boolean isActiveNeighbour(InetAddress serverIP, InetAddress neighbourIP) {
+		if(!serverToActiveNeighbours.containsKey(serverIP)) return false;
 		return serverToActiveNeighbours.get(serverIP).contains(neighbourIP);
 	}
 
