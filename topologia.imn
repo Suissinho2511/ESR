@@ -315,6 +315,7 @@ node n11 {
     interface-peer {e0 n18}
     interface-peer {e1 n17}
     interface-peer {e2 n2}
+    interface-peer {e3 n26}
 }
 
 node n12 {
@@ -543,6 +544,23 @@ node n25 {
     interface-peer {eth0 n15}
 }
 
+node n26 {
+    type router
+    model host
+    network-config {
+	hostname n26
+	!
+	interface eth0
+	 ip address 10.0.17.10/24
+	 ipv6 address 2001:17::10/64
+	!
+    }
+    canvas c1
+    iconcoords {303.3333333333333 170.0}
+    labelcoords {303.3333333333333 202.0}
+    interface-peer {eth0 n11}
+}
+
 link l1 {
     nodes {n1 n2}
     bandwidth 0
@@ -695,6 +713,11 @@ link l30 {
 
 link l31 {
     nodes {n13 n7}
+    bandwidth 0
+}
+
+link l32 {
+    nodes {n26 n11}
     bandwidth 0
 }
 
