@@ -164,7 +164,18 @@ public class ONode {
 						if (packet.message instanceof CABHelloPacket optinPacket &&
 								!isActiveNeighbour(neighbourIP)) {
 
-							InetAddress serverIP = InetAddress.getByName(optinPacket.getMessage());
+							String message = optinPacket.getMessage();
+							InetAddress serverIP;
+
+							if (message.equals("Im a client")){
+								//if it's a client, then the default server will be the first one
+								serverIP = getServers().get(0);
+							}
+							else {
+								//if it's a node, then its requesting a specific server
+								serverIP = InetAddress.getByName(message);
+							}
+
 							if(!serverToActiveNeighbours.containsKey(serverIP)){
 								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
 
@@ -275,7 +286,7 @@ public class ONode {
 					// Flood neighbours
 					this.neighbourIP_lock.readLock().lock();
 					// just sends packets to whomever wants
-					for (InetAddress ip : getDestinationsByServer(serverIP)) {
+					for (InetAddress ip : serverToActiveNeighbours.get(serverIP)) {
 
 						DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
 						socket_data.send(out_packet);
