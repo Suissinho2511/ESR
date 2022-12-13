@@ -34,19 +34,18 @@ public class ONode {
 		this.addressTable = new HashMap<>();
 
 		// Just for etapa 3
-		for (int i = 0; i < ips.length; ) {
+		for (int i = 0; i < ips.length;) {
 			InetAddress serverIP = InetAddress.getByName(ips[i]);
 			i++;
 			InetAddress sourceIP = InetAddress.getByName(ips[i]);
 			i += 2;
 			List<InetAddress> destinationsIP = null;
 
-			while(!ips[i].equals(">")){
+			while (!ips[i].equals(">")) {
 				destinationsIP.add(InetAddress.getByName(ips[i]));
 				i++;
 			}
 		}
-
 
 		System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
 
@@ -117,9 +116,9 @@ public class ONode {
 					case CHOOSE_SERVER:
 						if (packet.message instanceof CABControlPacket) {
 							CABControlPacket controlPacket = (CABControlPacket) packet.message;
-							
+
 							if (controlPacket.getAvailableJumps() <= 0
-								|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
+									|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
 								break;
 
 							controlPacket.addNode(s.getLocalAddress());
@@ -158,7 +157,6 @@ public class ONode {
 								serverToActiveNeighbours.remove(serverIP);
 							}
 
-
 							InetAddress newServerIp = replyPacket.getServer();
 
 							// If server doesn't exist, we add a new key
@@ -181,8 +179,9 @@ public class ONode {
 					case OPTIN:
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
-							
-							if (!isActiveNeighbour(neighbourIP)) break;
+
+							if (!isActiveNeighbour(neighbourIP))
+								break;
 
 							String message = optinPacket.getMessage();
 							InetAddress serverIP;
@@ -212,8 +211,8 @@ public class ONode {
 						}
 						break;
 					case OPTOUT:
-					if (packet.message instanceof CABHelloPacket) {
-						CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
+						if (packet.message instanceof CABHelloPacket) {
+							CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
 
 							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
 							removeActiveNeighbour(serverIP, neighbourIP);
@@ -334,10 +333,11 @@ public class ONode {
 
 	private void addConnection(InetAddress serverIP, InetAddress sourceIP, List<InetAddress> destinationsIP) {
 		this.neighbourIP_lock.writeLock().lock();
-		Map.Entry<InetAddress, List<InetAddress>> conections = new Map.Entry<InetAddress, List<InetAddress>>(sourceIP, destinationsIP);
-	
-		this.addressTable.put(serverIP, new Map.Entry<>());
-		
+		Map.Entry<InetAddress, List<InetAddress>> conections = new AbstractMap.SimpleEntry<InetAddress, List<InetAddress>>(
+				sourceIP, destinationsIP);
+
+		this.addressTable.put(serverIP, conections);
+
 		this.neighbourIP_lock.writeLock().unlock();
 
 	}
@@ -361,29 +361,33 @@ public class ONode {
 		return this.addressTable.get(serverIP).getValue();
 	}
 
-	/* 
-	private List<InetAddress> getDestinations() {
-		Set<InetAddress> destinations = new LinkedHashSet<InetAddress>();
-		Collection<Map<InetAddress, InetAddress>> values = this.addressTable.values();
-		for (Map<InetAddress, InetAddress> value : values) {
-			destinations.addAll(value.keySet());
-		}
-		return destinations.stream().collect(Collectors.toList());
-	}*/
+	/*
+	 * private List<InetAddress> getDestinations() {
+	 * Set<InetAddress> destinations = new LinkedHashSet<InetAddress>();
+	 * Collection<Map<InetAddress, InetAddress>> values =
+	 * this.addressTable.values();
+	 * for (Map<InetAddress, InetAddress> value : values) {
+	 * destinations.addAll(value.keySet());
+	 * }
+	 * return destinations.stream().collect(Collectors.toList());
+	 * }
+	 */
 
 	private InetAddress getSourceByServer(InetAddress serverIP) {
 		return this.addressTable.get(serverIP).getKey();
 	}
 
 	/*
-	private List<InetAddress> getSources() {
-		Set<InetAddress> sources = new LinkedHashSet<InetAddress>();
-		Collection<Map<InetAddress, InetAddress>> values = this.addressTable.values();
-		for (Map<InetAddress, InetAddress> value : values) {
-			sources.addAll(value.values());
-		}
-		return sources.stream().collect(Collectors.toList());
-	}*/
+	 * private List<InetAddress> getSources() {
+	 * Set<InetAddress> sources = new LinkedHashSet<InetAddress>();
+	 * Collection<Map<InetAddress, InetAddress>> values =
+	 * this.addressTable.values();
+	 * for (Map<InetAddress, InetAddress> value : values) {
+	 * sources.addAll(value.values());
+	 * }
+	 * return sources.stream().collect(Collectors.toList());
+	 * }
+	 */
 
 	private List<InetAddress> getNeighbours() {
 		Set<InetAddress> neighbours = new LinkedHashSet<InetAddress>();
