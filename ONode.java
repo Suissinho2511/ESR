@@ -241,7 +241,7 @@ public class ONode {
 							if(neighbour.equals(neighbourIP)) continue;
 
 							// open socket that connects with neighbour
-							Socket newSocket = new Socket(neighbourIP, 5001);
+							Socket newSocket = new Socket(neighbour, 5001);
 							DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 
 							//add our own IP
@@ -374,7 +374,7 @@ public class ONode {
 			} catch (Exception e) {
 				System.out
 						.println("[ERROR] Control thread for neighbour " + s.getInetAddress().toString() + " crashed!");
-				System.out.println(e);
+				e.printStackTrace();
 
 				// this.neighbourIP_lock.writeLock().lock();
 				// this.neighboursIP.remove(s.getInetAddress());

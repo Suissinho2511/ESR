@@ -83,12 +83,14 @@ public class CABControlPacket {
         this.availableJumps = in.readInt();
         this.currentJumps = in.readInt();
 
-        for (int i = 0; i < this.currentJumps; i++) {
-            String ip = in.readUTF();
+		this.path = new LinkedHashMap<>();
+        for (int i = 0; i <= this.currentJumps; i++) {
+			String ip_str = in.readUTF();
             Long time = in.readLong();
 
-            InetAddress add = InetAddress.getByAddress(ip.getBytes());
-            this.path.put(add, time);
+            InetAddress ip = InetAddress.getByName(ip_str.substring(1)); //remove '/'
+
+            this.path.put(ip, time);
         }
     }
 
