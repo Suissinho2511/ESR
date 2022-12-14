@@ -97,7 +97,7 @@ public class CABControlPacket {
         out.writeInt(this.currentJumps);
         for (Entry<InetAddress, Long> entry : this.path.entrySet()) {
             out.writeUTF(entry.getKey().toString());
-            out.writeUTF(entry.getValue().toString());
+            out.writeLong(entry.getValue());
         }
         out.flush();
     }

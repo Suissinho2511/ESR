@@ -173,6 +173,7 @@ public class Servidor extends JFrame implements ActionListener {
             TOPOLOGY,
             new CABControlPacket(10, new_socket.getLocalAddress()));
 
+
     topologyConstrutor.write(new DataOutputStream(new_socket.getOutputStream()));
     System.out.println("[DEBUG] Sent first topology packet");
 
@@ -189,6 +190,7 @@ public class Servidor extends JFrame implements ActionListener {
           CABPacket controlPacket = new CABPacket(
               CHOOSE_SERVER,
               new CABControlPacket(10, socket.getLocalAddress()));
+
           controlPacket.write(new DataOutputStream(socket.getOutputStream()));
           Thread.sleep(60000);
         }
