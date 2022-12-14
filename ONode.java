@@ -32,7 +32,7 @@ public class ONode {
 	public ONode(String[] ips) throws UnknownHostException {
 
 		// format: server a(node) b(efore)node server anode bnode...
-		this.neighbours = Arrays.asList(ips).stream().map((name) -> {
+		this.neighbours = Arrays.stream(ips).map((name) -> {
 			try {
 				return InetAddress.getByName(name);
 			} catch (UnknownHostException e1) {
@@ -117,53 +117,48 @@ public class ONode {
 				switch (packet.type) {
 
 					case HELLO:
-						if (packet.message instanceof CABHelloPacket) {
-							CABHelloPacket helloPacket = (CABHelloPacket) packet.message;
-
-							String str = helloPacket.getMessage();
-							System.out.println("[DEBUG] Received ping message from " + neighbourIP.toString()
-									+ ":\n" + str);
-						} else {
-							System.out.println("Something's wrong with this HELLO packet");
+						if (!(packet.message instanceof CABHelloPacket)) {
+							System.out.println("[DEBUG] This packet doesn't contain the correct information");
+							break;
 						}
+
+						CABHelloPacket helloPacket = (CABHelloPacket) packet.message;
+
+						String str = helloPacket.getMessage();
+						System.out.println("[DEBUG] Received ping message from " + neighbourIP.toString()
+								+ ":\n" + str);
 						break;
 
 					case CHOOSE_SERVER:
-						System.out.println("[DEBUG] Received CHOOSE_SERVER from "+ neighbourIP.toString());
-						if (packet.message instanceof CABControlPacket) {
-							CABControlPacket controlPacket = (CABControlPacket) packet.message;
+						if (!(packet.message instanceof CABControlPacket)) {
+							System.out.println("[DEBUG] This packet doesn't contain the correct information");
+							break;
+						}
 
-							if (controlPacket.getAvailableJumps() <= 0
-									|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
-								break;
+						CABControlPacket controlPacket = (CABControlPacket) packet.message;
 
-							controlPacket.addNode(s.getLocalAddress());
-							
+						if (controlPacket.getAvailableJumps() <= 0
+								|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
+							break;
 
-							// sent to those that hasn't passed through
-							for (InetAddress ip : getDestinationsByServer(controlPacket.getServer())) {
-								Socket newSocket = new Socket(ip, 5001);
-								if (!controlPacket.getPathAsInetAddress().contains(ip)) {
-									new CABPacket(MessageType.CHOOSE_SERVER, controlPacket)
-											.write(new DataOutputStream(newSocket.getOutputStream()));
-								}
-								newSocket.close();
+						controlPacket.addNode(s.getLocalAddress());
+
+						// sent to those that hasn't passed through
+						for (InetAddress ip : getDestinationsByServer(controlPacket.getServer())) {
+							Socket newSocket = new Socket(ip, 5001);
+							if (!controlPacket.getPathAsInetAddress().contains(ip)) {
+								new CABPacket(MessageType.CHOOSE_SERVER, controlPacket)
+										.write(new DataOutputStream(newSocket.getOutputStream()));
 							}
-
-
-
-
-						} else {
-							System.out.println("Something's wrong with this CHOOSE_SERVER packet");
+							newSocket.close();
 						}
 
 						break;
 
 					case REPLY_CHOOSE_SERVER:
-						System.out.println("[DEBUG] Received REPLY_CHOOSE_SERVER from "+ neighbourIP.toString());
-						// Reply path
+
 						if (!(packet.message instanceof CABControlPacket)) {
-							System.out.println("Something's wrong with this REPLY_PATH packet");
+							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
 
@@ -202,7 +197,7 @@ public class ONode {
 						break;
 					case TOPOLOGY:
 						if (!(packet.message instanceof CABControlPacket)) {
-							System.out.println("Something's wrong with this REPLY_PATH packet");
+							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
 
@@ -216,14 +211,24 @@ public class ONode {
 
 						Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
 						DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+
+						// First we send packet to all neighbours except the source
+						for (InetAddress neighbour : neighbours) {
+							if(neighbour.equals(neighbourIP)) continue;
+							packet.write(out);
+						}
+
+						//then we give a response to source
 						new CABPacket(MessageType.REPLY_TOPOLOGY, topologyPacket).write(out);
+
+
 						newSocket.close();
 
 						break;
 
 					case REPLY_TOPOLOGY:
 						if (!(packet.message instanceof CABControlPacket)) {
-							System.out.println("Something's wrong with this REPLY_PATH packet");
+							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
 
@@ -232,7 +237,7 @@ public class ONode {
 						serverIP = replyTopologyPacket.getServer();
 
 						if(!addressTable.containsKey(serverIP)){
-							System.out.println("This server doesn't exist :/");
+							System.out.println("[DEBUG] Server " + serverIP + " doesn't exist in my address table");
 							break;
 						}
 
@@ -240,71 +245,73 @@ public class ONode {
 						break;
 
 					case OPTIN:
-						System.out.println("[DEBUG] Received OPTIN from "+ neighbourIP.toString());
-						if (packet.message instanceof CABHelloPacket) {
-							CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
-
-
-							String message = optinPacket.getMessage();
-
-							if (message.equals("Im a client")) {
-								// if it's a client, then the default server will be the first one
-								serverIP = getServers().get(0);
-							} else {
-								// if it's a node, then its requesting a specific server
-								serverIP = InetAddress.getByName(message);
-							}
-							
-
-
-							if(isActiveNeighbour(serverIP, neighbourIP)) break;
-
-							if (!serverToActiveNeighbours.containsKey(serverIP)) {
-								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
-
-								// if a new server is added, we need to send this reply to before node of this
-								// thing
-								newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								out = new DataOutputStream(newSocket.getOutputStream());
-								new CABPacket(MessageType.OPTIN, optinPacket).write(out);
-								newSocket.close();
-							}
-							
-							if(!isActiveNeighbour(serverIP, neighbourIP))
-								addActiveNeighbour(serverIP, neighbourIP);
-
-							System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
-
-						} else {
-							System.out.println("Something's wrong with this OPT-IN packet");
+						if (!(packet.message instanceof CABHelloPacket)) {
+							System.out.println("[DEBUG] This packet doesn't contain the correct information");
+							break;
 						}
+						CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
+
+
+						String message = optinPacket.getMessage();
+
+						if (message.equals("Im a client")) {
+							// if it's a client, then the default server will be the first one
+							serverIP = getServers().get(0);
+						} else {
+							// if it's a node, then its requesting a specific server
+							serverIP = InetAddress.getByName(message);
+						}
+
+
+
+						if(isActiveNeighbour(serverIP, neighbourIP)) break;
+
+						if (!serverToActiveNeighbours.containsKey(serverIP)) {
+							serverToActiveNeighbours.put(serverIP, new ArrayList<>());
+
+							// if a new server is added, we need to send this reply to before node of this
+							// thing
+							newSocket = new Socket(getSourceByServer(serverIP), 5001);
+							out = new DataOutputStream(newSocket.getOutputStream());
+							new CABPacket(MessageType.OPTIN, optinPacket).write(out);
+							newSocket.close();
+						}
+
+						if(!isActiveNeighbour(serverIP, neighbourIP))
+							addActiveNeighbour(serverIP, neighbourIP);
+
+						System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
+
 						break;
 					case OPTOUT:
-						System.out.println("[DEBUG] Received OPTOUT from "+ neighbourIP.toString());
-						if (packet.message instanceof CABHelloPacket) {
-							CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
-
-							serverIP = InetAddress.getByName(optoutPacket.getMessage());
-							
-							if (!isActiveNeighbour(serverIP, neighbourIP))
-								break;
-
-
-							removeActiveNeighbour(serverIP, neighbourIP);
-							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
-								newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								out = new DataOutputStream(newSocket.getOutputStream());
-								new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
-								newSocket.close();
-							}
-
-						} else {
-							System.out.println("Something's wrong with this OPT-OUT packet");
+						if (!(packet.message instanceof CABHelloPacket)) {
+							System.out.println("[DEBUG] This packet doesn't contain the correct information");
+							break;
 						}
+						CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
+
+						serverIP = InetAddress.getByName(optoutPacket.getMessage());
+
+						if (!isActiveNeighbour(serverIP, neighbourIP)){
+							System.out.println("[DEBUG] Neighbour " + neighbourIP +
+									" is already not active to Server " + serverIP);
+							break;
+						}
+
+
+
+						removeActiveNeighbour(serverIP, neighbourIP);
+						if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
+							newSocket = new Socket(getSourceByServer(serverIP), 5001);
+							out = new DataOutputStream(newSocket.getOutputStream());
+							new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
+							newSocket.close();
+						}
+
 						break;
 
 					default:
-						System.out.println("[DEBUG] Received unknown message from " + s.getInetAddress().toString());
+						System.out.println("[DEBUG] Received unknown message from " + neighbourIP);
 						break;
 				}
 
