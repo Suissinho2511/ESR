@@ -66,6 +66,7 @@ public class Servidor extends JFrame implements ActionListener {
     try {
       RTPsocket = new DatagramSocket(); // init RTP socket
       ClientIPAddr = InetAddress.getByName(argv);
+      RTPsocket.connect(ClientIPAddr, RTP_dest_port);
       System.out.println("Servidor: socket " + ClientIPAddr);
       video = new VideoStream(VideoFileName); // init the VideoStream object:
       System.out.println("Servidor: vai enviar video da file " + VideoFileName);
