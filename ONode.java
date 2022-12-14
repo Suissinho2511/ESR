@@ -257,6 +257,8 @@ public class ONode {
 							
 
 
+							if(isActiveNeighbour(serverIP, neighbourIP)) break;
+
 							if (!serverToActiveNeighbours.containsKey(serverIP)) {
 								serverToActiveNeighbours.put(serverIP, new ArrayList<>());
 
@@ -286,6 +288,7 @@ public class ONode {
 							
 							if (!isActiveNeighbour(serverIP, neighbourIP))
 								break;
+
 
 							removeActiveNeighbour(serverIP, neighbourIP);
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
