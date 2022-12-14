@@ -74,4 +74,6 @@ public class AddressTable {
         this.destinations.add(destination);
     }
 
+    public boolean isConnection(InetAddress destination){return this.destinations.contains(destination);}
+
 }

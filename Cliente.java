@@ -107,8 +107,6 @@ public class Cliente {
       System.out.println("Cliente: erro no socket: " + e.getMessage());
     }
 
-	
-
     controlPackets();
   }
 
@@ -175,6 +173,7 @@ public class Cliente {
           }
 
           break;
+
         case TOPOLOGY:
           if (!(packet.message instanceof CABControlPacket)) {
             System.out.println("[DEBUG] This packet doesn't contain the correct information");

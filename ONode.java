@@ -316,6 +316,13 @@ public class ONode {
 							serverIP = InetAddress.getByName(message);
 						}
 
+						if(!addressTable.containsKey(serverIP)){
+							System.out.println("[DEBUG] " + serverIP + " is not on my address table");
+							break;
+						}
+
+						if(!addressTable.get(serverIP).isConnection(neighbourIP))
+							addressTable.get(serverIP).addConnection(neighbourIP);
 
 						if(isActiveNeighbour(serverIP, neighbourIP)){
 							System.out.println("[DEBUG] " + neighbourIP + " is already an active neighbour");
