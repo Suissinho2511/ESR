@@ -300,6 +300,7 @@ public class ONode {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
+
 						if(addressTable.isEmpty()){
 							System.out.println("[DEBUG] Topology not done yet :/");
 							break;
@@ -317,8 +318,10 @@ public class ONode {
 						}
 
 
-
-						if(isActiveNeighbour(serverIP, neighbourIP)) break;
+						if(isActiveNeighbour(serverIP, neighbourIP)){
+							System.out.println("[DEBUG] " + neighbourIP + " is already an active neighbour");
+							break;
+						}
 
 						if (!serverToActiveNeighbours.containsKey(serverIP)) {
 							serverToActiveNeighbours.put(serverIP, new ArrayList<>());
@@ -331,8 +334,7 @@ public class ONode {
 							newSocket.close();
 						}
 
-						if(!isActiveNeighbour(serverIP, neighbourIP))
-							addActiveNeighbour(serverIP, neighbourIP);
+						addActiveNeighbour(serverIP, neighbourIP);
 
 						System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
 

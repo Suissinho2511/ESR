@@ -7,11 +7,11 @@ public class AddressTable {
     private InetAddress sourceIP;
     private Long expectedDelay;
     private int jumps;
-
     private boolean state;
-
     private List<InetAddress> destinations;
-    //private Servidor, Fluxo, Custo, Origem, Destinos, Estado
+
+
+    //Servidor, Fluxo, Custo, Origem, Destinos, Estado
 
 
     public AddressTable(InetAddress serverIP, InetAddress sourceIP, Long expectedDelay, int jumps) {

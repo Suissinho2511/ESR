@@ -168,11 +168,26 @@ public class Cliente {
           }
 
           break;
-
-        // IDK
         case TOPOLOGY:
+          if (!(packet.message instanceof CABControlPacket)) {
+            System.out.println("[DEBUG] This packet doesn't contain the correct information");
+            break;
+          }
 
+          CABControlPacket topologyPacket = (CABControlPacket) packet.message;
+
+          InetAddress neighbourIP = socket.getInetAddress();
+
+          Socket newSocket = new Socket(neighbourIP, 5001);
+          DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+
+          new CABPacket(MessageType.REPLY_TOPOLOGY, topologyPacket).write(out);
+
+          newSocket.close();
+
+          System.out.println("[DEBUG] Confirmation of connection sent to " + neighbourIP);
           break;
+
         default:
           break;
       }
