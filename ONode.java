@@ -114,6 +114,11 @@ public class ONode {
 
 				System.out.println("[DEBUG] Received " + packet.type.toString() + " from "+ neighbourIP.toString());
 
+				if(!isNeighbour(neighbourIP)) {
+					addNeighbour(neighbourIP);
+					System.out.println("[INFO] New neighbour: " + neighbourIP);
+				}
+
 				switch (packet.type) {
 
 					case HELLO:
@@ -301,7 +306,6 @@ public class ONode {
 						}
 						CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
 
-
 						String message = optinPacket.getMessage();
 
 						if (message.equals("Im a client")) {
@@ -376,10 +380,9 @@ public class ONode {
 						.println("[ERROR] Control thread for neighbour " + s.getInetAddress().toString() + " crashed!");
 				e.printStackTrace();
 
-				// this.neighbourIP_lock.writeLock().lock();
-				// this.neighboursIP.remove(s.getInetAddress());
-				// this.neighbourIP_lock.writeLock().unlock();
-				// System.exit(-1);
+
+				System.out.println("[INFO] Neighbour removed: " + s.getInetAddress().toString());
+				removeNeighbour(s.getInetAddress());
 			}
 		});
 	}
@@ -484,15 +487,28 @@ public class ONode {
 
 		this.neighbourIP_lock.writeLock().unlock();
 
-	}
+	}*/
 
 
 	private boolean isNeighbour(InetAddress ip) {
 		this.neighbourIP_lock.readLock().lock();
-		boolean result = getNeighbours().contains(ip);
+		boolean result = this.neighbours.contains(ip);
 		this.neighbourIP_lock.readLock().unlock();
 		return result;
-	}*/
+	}
+
+	private void addNeighbour(InetAddress ip) {
+		this.neighbourIP_lock.readLock().lock();
+		this.neighbours.add(ip);
+		this.neighbourIP_lock.readLock().unlock();
+	}
+
+	private void removeNeighbour(InetAddress ip) {
+		this.neighbourIP_lock.readLock().lock();
+		if(this.neighbours.contains(ip)) this.neighbours.remove(ip);
+		//TODO: remover dos outros mapas?
+		this.neighbourIP_lock.readLock().unlock();
+	}
 
 	private List<InetAddress> getServers() {
 		return this.addressTable.keySet().stream().collect(Collectors.toList());
