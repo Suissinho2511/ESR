@@ -63,6 +63,14 @@ public class CABControlPacket {
         return System.currentTimeMillis() - this.path.get(source);
     }
 
+    public int getCurrentJumps() {
+        return currentJumps;
+    }
+
+    public void setCurrentJumps(int currentJumps) {
+        this.currentJumps = currentJumps;
+    }
+
     public String[] getPath() {
         return path.keySet().stream().map(InetAddress::getHostAddress).toArray(String[]::new);
     }

@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 public class ONode {
 
 	private Map<InetAddress, List<InetAddress>> serverToActiveNeighbours;
-
-	private Map<InetAddress, Map.Entry<InetAddress, List<InetAddress>>> addressTable;
+	// name of server and class that belongs to it
+	private Map<InetAddress, AddressTable> addressTable;
 
 	private final List<InetAddress> neighbours;
 
@@ -141,10 +141,12 @@ public class ONode {
 								|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
 							break;
 
+						InetAddress serverIP = controlPacket.getServer();
+
 						controlPacket.addNode(s.getLocalAddress());
 
 						// sent to those that hasn't passed through
-						for (InetAddress ip : getDestinationsByServer(controlPacket.getServer())) {
+						for (InetAddress ip : addressTable.get(serverIP).getDestinations()) {
 							Socket newSocket = new Socket(ip, 5001);
 							if (!controlPacket.getPathAsInetAddress().contains(ip)) {
 								new CABPacket(MessageType.CHOOSE_SERVER, controlPacket)
@@ -164,7 +166,7 @@ public class ONode {
 
 						CABControlPacket replyPacket = (CABControlPacket) packet.message;
 
-						InetAddress serverIP = replyPacket.getLast().getKey();
+						serverIP = replyPacket.getLast().getKey();
 
 						removeActiveNeighbour(serverIP, neighbourIP);
 
@@ -205,7 +207,23 @@ public class ONode {
 
 						serverIP = topologyPacket.getServer();
 
-						if(addressTable.containsKey(serverIP)) break;
+						// If there is already a connection with this server..
+						if(addressTable.containsKey(serverIP)){
+							AddressTable connection = addressTable.get(serverIP);
+
+							//Then we need to see if the new packet has a bigger delay
+							// or if it has the same, compares the number of jumps
+							if(connection.getExpectedDelay() < topologyPacket.getDelay() ||
+									(connection.getExpectedDelay() == topologyPacket.getDelay() &&
+									connection.getJumps() < topologyPacket.getCurrentJumps()))
+								break; // breaks if its worse than what we have
+
+						}
+
+						AddressTable connection = new AddressTable(
+								serverIP, neighbourIP, topologyPacket.getDelay(), topologyPacket.getCurrentJumps());
+
+						addressTable.put(serverIP, connection);
 
 						// First we send packet to all neighbours except the source
 						for (InetAddress neighbour : neighbours) {
@@ -229,8 +247,6 @@ public class ONode {
 							System.out.println("[DEBUG] TOPOLOGY packet sent to " + neighbour);
 						}
 
-
-						createConnection(serverIP, neighbourIP);
 
 						//then we give a response to source
 						Socket newSocket = new Socket(neighbourIP, 5001);
@@ -259,7 +275,7 @@ public class ONode {
 							break;
 						}
 
-						addConnection(serverIP, neighbourIP);
+						addressTable.get(serverIP).addConnection(neighbourIP);
 
 						System.out.println("[DEBUG] Connection with " + neighbourIP + " confirmed");
 
@@ -432,7 +448,7 @@ public class ONode {
 		out.close();
 		s.close();
 	}
-
+/*
 	private void addConnection(InetAddress serverIP, InetAddress destinationIP) {
 		this.neighbourIP_lock.writeLock().lock();
 
@@ -453,7 +469,7 @@ public class ONode {
 
 	}
 
-	/*
+
 	private boolean isNeighbour(InetAddress ip) {
 		this.neighbourIP_lock.readLock().lock();
 		boolean result = getNeighbours().contains(ip);
@@ -465,6 +481,7 @@ public class ONode {
 		return this.addressTable.keySet().stream().collect(Collectors.toList());
 	}
 
+	/*
 	private List<InetAddress> getDestinationsByServer(InetAddress serverIP) {
 		return this.addressTable.get(serverIP).getValue();
 	}
@@ -481,8 +498,8 @@ public class ONode {
 	 * }
 	 */
 
-	private InetAddress getSourceByServer(InetAddress serverIP) {
-		return this.addressTable.get(serverIP).getKey();
+	public InetAddress getSourceByServer(InetAddress serverIP) {
+		return this.addressTable.get(serverIP).getSourceIP();
 	}
 
 	/*
