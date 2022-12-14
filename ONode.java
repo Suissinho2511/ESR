@@ -221,7 +221,19 @@ public class ONode {
 									(connection.getExpectedDelay() == topologyPacket.getDelay() &&
 									connection.getJumps() < topologyPacket.getCurrentJumps()))
 								break; // breaks if its worse than what we have
+							else{
+								Socket newSocket = new Socket(neighbourIP, 5001);
+								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 
+
+
+								new CABPacket(MessageType.REPLY_TOPOLOGY,
+										new CABHelloPacket("d" + serverIP.toString())).write(out);
+
+								newSocket.close();
+
+								System.out.println("[DEBUG] Deleting connection from " + neighbourIP);
+							}
 						}
 
 						AddressTable connection = new AddressTable(
@@ -256,7 +268,10 @@ public class ONode {
 						Socket newSocket = new Socket(neighbourIP, 5001);
 						DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 
-						new CABPacket(MessageType.REPLY_TOPOLOGY, topologyPacket).write(out);
+
+
+						new CABPacket(MessageType.REPLY_TOPOLOGY,
+								new CABHelloPacket("a" + serverIP.toString())).write(out);
 
 						newSocket.close();
 
@@ -265,23 +280,35 @@ public class ONode {
 						break;
 
 					case REPLY_TOPOLOGY:
-						if (!(packet.message instanceof CABControlPacket)) {
+						if (!(packet.message instanceof CABHelloPacket)) {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
 
-						CABControlPacket replyTopologyPacket = (CABControlPacket) packet.message;
+						CABHelloPacket replyTopologyPacket = (CABHelloPacket) packet.message;
 
-						serverIP = replyTopologyPacket.getServer();
+						String message = replyTopologyPacket.getMessage();
+
+
+						serverIP = InetAddress.getByName(message.substring(1));
 
 						if(!addressTable.containsKey(serverIP)){
 							System.out.println("[DEBUG] Server " + serverIP + " doesn't exist in my address table");
 							break;
 						}
 
-						addressTable.get(serverIP).addConnection(neighbourIP);
+						if (message.startsWith("d")){
 
-						System.out.println("[DEBUG] Connection with " + neighbourIP + " confirmed");
+							addressTable.get(serverIP).deleteConnection(neighbourIP);
+
+							System.out.println("[DEBUG] Connection with " + neighbourIP + " removed");
+						}
+						else if(message.startsWith("a")){
+							addressTable.get(serverIP).addConnection(neighbourIP);
+
+							System.out.println("[DEBUG] Connection with " + neighbourIP + " confirmed");
+						}
+
 
 						break;
 
@@ -296,7 +323,7 @@ public class ONode {
 						}
 						CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
 
-						String message = optinPacket.getMessage();
+						message = optinPacket.getMessage();
 
 						if (message.equals("Im a client")) {
 							// if it's a client, then the default server will be the first one

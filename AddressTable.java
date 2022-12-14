@@ -74,6 +74,10 @@ public class AddressTable {
         this.destinations.add(destination);
     }
 
+    public void deleteConnection(InetAddress destination){
+        this.destinations.remove(destination);
+    }
+
     public boolean isConnection(InetAddress destination){return this.destinations.contains(destination);}
 
 }
