@@ -134,6 +134,10 @@ public class ONode {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
+						if(addressTable.isEmpty()){
+							System.out.println("[DEBUG] Topology not done yet :/");
+							break;
+						}
 
 						CABControlPacket controlPacket = (CABControlPacket) packet.message;
 
@@ -161,6 +165,11 @@ public class ONode {
 
 						if (!(packet.message instanceof CABControlPacket)) {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
+							break;
+						}
+
+						if(addressTable.isEmpty()){
+							System.out.println("[DEBUG] Topology not done yet :/");
 							break;
 						}
 
@@ -286,6 +295,10 @@ public class ONode {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
+						if(addressTable.isEmpty()){
+							System.out.println("[DEBUG] Topology not done yet :/");
+							break;
+						}
 						CABHelloPacket optinPacket = (CABHelloPacket) packet.message;
 
 
@@ -323,6 +336,10 @@ public class ONode {
 					case OPTOUT:
 						if (!(packet.message instanceof CABHelloPacket)) {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
+							break;
+						}
+						if(addressTable.isEmpty()){
+							System.out.println("[DEBUG] Topology not done yet :/");
 							break;
 						}
 						CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
