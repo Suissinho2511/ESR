@@ -207,22 +207,40 @@ public class ONode {
 
 						if(addressTable.containsKey(serverIP)) break;
 
-						createConnection(serverIP, neighbourIP);
-
-						Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-						DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
-
 						// First we send packet to all neighbours except the source
 						for (InetAddress neighbour : neighbours) {
+
+							//if the neighbour is the same we don't do anything
 							if(neighbour.equals(neighbourIP)) continue;
+
+							// open socket that connects with neighbour
+							Socket newSocket = new Socket(neighbourIP, 5001);
+							DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+
+							//add our own IP
+							CABControlPacket toSend = topologyPacket;
+							toSend.addNode(newSocket.getLocalAddress());
+							packet.message = toSend;
+
+							//Send and close
 							packet.write(out);
+							newSocket.close();
+
+							System.out.println("[DEBUG] TOPOLOGY packet sent to " + neighbour);
 						}
 
+
+						createConnection(serverIP, neighbourIP);
+
 						//then we give a response to source
+						Socket newSocket = new Socket(neighbourIP, 5001);
+						DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+
 						new CABPacket(MessageType.REPLY_TOPOLOGY, topologyPacket).write(out);
 
-
 						newSocket.close();
+
+						System.out.println("[DEBUG] Confirmation of connection sent to " + neighbourIP);
 
 						break;
 
@@ -242,6 +260,9 @@ public class ONode {
 						}
 
 						addConnection(serverIP, neighbourIP);
+
+						System.out.println("[DEBUG] Connection with " + neighbourIP + " confirmed");
+
 						break;
 
 					case OPTIN:
