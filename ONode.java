@@ -381,8 +381,8 @@ public class ONode {
 				e.printStackTrace();
 
 
-				System.out.println("[INFO] Neighbour removed: " + s.getInetAddress().toString());
-				removeNeighbour(s.getInetAddress());
+				//System.out.println("[INFO] Neighbour removed: " + s.getInetAddress().toString());
+				//removeNeighbour(s.getInetAddress());
 			}
 		});
 	}
