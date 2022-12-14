@@ -52,7 +52,8 @@ public class Cliente {
   // --------------------------
   // Constructor
   // --------------------------
-  public Cliente() {
+  public Cliente(String activeNeighbour) throws UnknownHostException {
+    this.activeNeighbour = InetAddress.getByName(activeNeighbour);
 
     // build GUI
     // --------------------------
@@ -111,9 +112,8 @@ public class Cliente {
   // ------------------------------------
   public static void main(String argv[]) throws Exception {
     // send SETUP message to the server
-    Cliente t = new Cliente();
-    CABPacket packet = new CABPacket(MessageType.OPTIN, new CABHelloPacket("Im a client"));
-    sendControlPacket(InetAddress.getByName(argv[0]), packet);
+    Cliente cliente = new Cliente(argv[0]);
+
     controlPackets();
   }
 
@@ -185,9 +185,9 @@ public class Cliente {
   // ------------------------------------
   // Send control packet
   // ------------------------------------
-  private static void sendControlPacket(InetAddress neighbour, CABPacket packet) {
+  private void sendControlPacket(CABPacket packet) {
     // send RTSP request
-    try (Socket socket = new Socket(neighbour, 5001)) {
+    try (Socket socket = new Socket(this.activeNeighbour, 5001)) {
       // use the RTSPBufferedWriter to write to the RTSP socket
       DataOutputStream out = new DataOutputStream(socket.getOutputStream());
       packet.write(out);
@@ -205,6 +205,10 @@ public class Cliente {
   // -----------------------
   class playButtonListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
+      if (bestServer == null)
+        sendControlPacket(new CABPacket(MessageType.OPTIN, new CABHelloPacket("Im a client")));
+      else
+        sendControlPacket(new CABPacket(MessageType.OPTIN, new CABHelloPacket(bestServer.toString())));
 
       System.out.println("Play Button pressed !");
       // start the timers ...
@@ -233,9 +237,7 @@ public class Cliente {
       cTimer.stop();
 
       // optout
-      CABPacket optout = new CABPacket(OPTOUT, null);
-      // TODO:
-      // optout.write(out);
+      sendControlPacket(new CABPacket(MessageType.OPTOUT, new CABHelloPacket(bestServer.toString())));
 
       // exit
       System.exit(0);

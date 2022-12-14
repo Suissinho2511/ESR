@@ -63,4 +63,10 @@ public class CABPacket {
 		}
 		out.flush();
 	}
+
+	@Override
+	public String toString(){
+		return "Type: " + this.type.toString() + ",\n" +
+				this.message.toString();
+	}
 }

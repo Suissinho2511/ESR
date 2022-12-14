@@ -21,7 +21,9 @@ public class ONode {
 
 	private Map<InetAddress, List<InetAddress>> serverToActiveNeighbours;
 
-	private final Map<InetAddress, Map.Entry<InetAddress, List<InetAddress>>> addressTable;
+	private Map<InetAddress, Map.Entry<InetAddress, List<InetAddress>>> addressTable;
+
+	private final List<InetAddress> neighbours;
 
 	private final ReadWriteLock neighbourIP_lock = new ReentrantReadWriteLock();
 	private DatagramSocket socket_data;
@@ -30,9 +32,18 @@ public class ONode {
 	public ONode(String[] ips) throws UnknownHostException {
 
 		// format: server a(node) b(efore)node server anode bnode...
+		this.neighbours = Arrays.asList(ips).stream().map((name) -> {
+			try {
+				return InetAddress.getByName(name);
+			} catch (UnknownHostException e1) {
+				return null;
+			}
+		}).collect(Collectors.toList());
+
 		this.addressTable = new HashMap<>();
 
 		// Just for etapa 3
+		/*
 		for (int i = 0; i < ips.length;) {
 			InetAddress serverIP = InetAddress.getByName(ips[i]);
 			i++;
@@ -47,7 +58,9 @@ public class ONode {
 			i++;
 
 			addConnection(serverIP, sourceIP, destinationsIP);
-		}
+		}*/
+
+
 
 		System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
 
@@ -99,6 +112,8 @@ public class ONode {
 				CABPacket packet = new CABPacket(in);
 				InetAddress neighbourIP = s.getInetAddress();
 
+				System.out.println("[DEBUG] Received " + packet.type.toString() + " from "+ neighbourIP.toString());
+
 				switch (packet.type) {
 
 					case HELLO:
@@ -147,43 +162,83 @@ public class ONode {
 					case REPLY_CHOOSE_SERVER:
 						System.out.println("[DEBUG] Received REPLY_CHOOSE_SERVER from "+ neighbourIP.toString());
 						// Reply path
-						if (packet.message instanceof CABControlPacket) {
-							CABControlPacket replyPacket = (CABControlPacket) packet.message;
-
-							InetAddress serverIP = replyPacket.getLast().getKey();
-
-							removeActiveNeighbour(serverIP, neighbourIP);
-
-							// If server stops being active, then we need to opt-out in previous node
-							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
-								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
-								new CABPacket(MessageType.OPTOUT, new CABHelloPacket(serverIP.toString())).write(out);
-								newSocket.close();
-								serverToActiveNeighbours.remove(serverIP);
-							}
-
-							InetAddress newServerIp = replyPacket.getServer();
-
-							// If server doesn't exist, we add a new key
-							if (!serverToActiveNeighbours.containsKey(newServerIp)) {
-								serverToActiveNeighbours.put(newServerIp, new ArrayList<>());
-
-								// if a new server is added, we need to inform the source node
-								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
-								new CABPacket(MessageType.OPTIN, new CABHelloPacket(newServerIp.toString())).write(out);
-								newSocket.close();
-							}
-
-							addActiveNeighbour(newServerIp, neighbourIP);
-							
-							System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
-
-						} else {
+						if (!(packet.message instanceof CABControlPacket)) {
 							System.out.println("Something's wrong with this REPLY_PATH packet");
+							break;
 						}
+
+						CABControlPacket replyPacket = (CABControlPacket) packet.message;
+
+						InetAddress serverIP = replyPacket.getLast().getKey();
+
+						removeActiveNeighbour(serverIP, neighbourIP);
+
+						// If server stops being active, then we need to opt-out in previous node
+						if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
+							Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
+							DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+							new CABPacket(MessageType.OPTOUT, new CABHelloPacket(serverIP.toString())).write(out);
+							newSocket.close();
+							serverToActiveNeighbours.remove(serverIP);
+						}
+
+						InetAddress newServerIp = replyPacket.getServer();
+
+						// If server doesn't exist, we add a new key
+						if (!serverToActiveNeighbours.containsKey(newServerIp)) {
+							serverToActiveNeighbours.put(newServerIp, new ArrayList<>());
+
+							// if a new server is added, we need to inform the source node
+							Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
+							DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+							new CABPacket(MessageType.OPTIN, new CABHelloPacket(newServerIp.toString())).write(out);
+							newSocket.close();
+						}
+
+						addActiveNeighbour(newServerIp, neighbourIP);
+
+						System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
+
 						break;
+					case TOPOLOGY:
+						if (!(packet.message instanceof CABControlPacket)) {
+							System.out.println("Something's wrong with this REPLY_PATH packet");
+							break;
+						}
+
+						CABControlPacket topologyPacket = (CABControlPacket) packet.message;
+
+						serverIP = topologyPacket.getServer();
+
+						if(addressTable.containsKey(serverIP)) break;
+
+						createConnection(serverIP, neighbourIP);
+
+						Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
+						DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+						new CABPacket(MessageType.REPLY_TOPOLOGY, topologyPacket).write(out);
+						newSocket.close();
+
+						break;
+
+					case REPLY_TOPOLOGY:
+						if (!(packet.message instanceof CABControlPacket)) {
+							System.out.println("Something's wrong with this REPLY_PATH packet");
+							break;
+						}
+
+						CABControlPacket replyTopologyPacket = (CABControlPacket) packet.message;
+
+						serverIP = replyTopologyPacket.getServer();
+
+						if(!addressTable.containsKey(serverIP)){
+							System.out.println("This server doesn't exist :/");
+							break;
+						}
+
+						addConnection(serverIP, neighbourIP);
+						break;
+
 					case OPTIN:
 						System.out.println("[DEBUG] Received OPTIN from "+ neighbourIP.toString());
 						if (packet.message instanceof CABHelloPacket) {
@@ -191,7 +246,6 @@ public class ONode {
 
 
 							String message = optinPacket.getMessage();
-							InetAddress serverIP;
 
 							if (message.equals("Im a client")) {
 								// if it's a client, then the default server will be the first one
@@ -208,8 +262,8 @@ public class ONode {
 
 								// if a new server is added, we need to send this reply to before node of this
 								// thing
-								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+								newSocket = new Socket(getSourceByServer(serverIP), 5001);
+								out = new DataOutputStream(newSocket.getOutputStream());
 								new CABPacket(MessageType.OPTIN, optinPacket).write(out);
 								newSocket.close();
 							}
@@ -228,15 +282,15 @@ public class ONode {
 						if (packet.message instanceof CABHelloPacket) {
 							CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
 
-							InetAddress serverIP = InetAddress.getByName(optoutPacket.getMessage());
+							serverIP = InetAddress.getByName(optoutPacket.getMessage());
 							
 							if (!isActiveNeighbour(serverIP, neighbourIP))
 								break;
 
 							removeActiveNeighbour(serverIP, neighbourIP);
 							if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
-								Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
-								DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
+								newSocket = new Socket(getSourceByServer(serverIP), 5001);
+								out = new DataOutputStream(newSocket.getOutputStream());
 								new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
 								newSocket.close();
 							}
@@ -348,10 +402,19 @@ public class ONode {
 		s.close();
 	}
 
-	private void addConnection(InetAddress serverIP, InetAddress sourceIP, List<InetAddress> destinationsIP) {
+	private void addConnection(InetAddress serverIP, InetAddress destinationIP) {
+		this.neighbourIP_lock.writeLock().lock();
+
+		this.addressTable.get(serverIP).getValue().add(destinationIP);
+
+		this.neighbourIP_lock.writeLock().unlock();
+
+	}
+
+	private void createConnection(InetAddress serverIP, InetAddress sourceIP) {
 		this.neighbourIP_lock.writeLock().lock();
 		Map.Entry<InetAddress, List<InetAddress>> conections = new AbstractMap.SimpleEntry<InetAddress, List<InetAddress>>(
-				sourceIP, destinationsIP);
+				sourceIP, new ArrayList<>());
 
 		this.addressTable.put(serverIP, conections);
 

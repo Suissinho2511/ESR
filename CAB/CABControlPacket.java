@@ -16,19 +16,13 @@ public class CABControlPacket {
     private int currentJumps;
     private LinkedHashMap<InetAddress, Long> path;
 
-    public CABControlPacket(int maxJumps, InetAddress currAddress, Long timestamp) {
+    public CABControlPacket(int maxJumps, InetAddress currAddress) {
         this.availableJumps = maxJumps;
         this.currentJumps = 0;
         this.path = new LinkedHashMap<>();
-        this.path.put(currAddress, timestamp);
+        this.path.put(currAddress, System.currentTimeMillis());
     }
 
-    public CABControlPacket(int maxJumps) throws UnknownHostException {
-        this.availableJumps = maxJumps;
-        this.currentJumps = 0;
-        this.path = new LinkedHashMap<>();
-        this.path.put(InetAddress.getLocalHost(), System.currentTimeMillis());
-    }
 
     public CABControlPacket(DataInputStream in) throws IOException {
         read(in);
@@ -98,5 +92,12 @@ public class CABControlPacket {
             out.writeUTF(entry.getValue().toString());
         }
         out.flush();
+    }
+
+    @Override
+    public String toString(){
+        return "Available Jumps: " + this.availableJumps + ",\n" +
+                "Current Jumps: " + this.currentJumps + ",\n" +
+                "Path: " + this.path.toString();
     }
 }

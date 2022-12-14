@@ -27,4 +27,9 @@ public class CABHelloPacket {
 		out.writeUTF(this.message);
 		out.flush();
 	}
+
+	@Override
+	public String toString(){
+		return this.message;
+	}
 }

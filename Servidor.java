@@ -53,8 +53,8 @@ public class Servidor extends JFrame implements ActionListener {
 
     this.socketControl = new ServerSocket(5001);
 
-    // TopologyConstructor(InetAddress.getByName(argv));
-    // controlSendThread(new Socket(argv, 5001)).start();
+    topologyConstructor(InetAddress.getByName(argv));
+    controlSendThread(new Socket(argv, 5001)).start();
     // System.out.println("ola");
 
     // init para a parte do servidor
@@ -126,7 +126,7 @@ public class Servidor extends JFrame implements ActionListener {
         int image_length = video.getnextframe(sBuf);
 
         // Builds an RTPpacket object containing the frame
-        InetAddress ip = InetAddress.getByName("10.0.19.10");//RTPsocket.getInetAddress();
+        InetAddress ip = RTPsocket.getLocalAddress();
         System.out.println("IP in string format: " + ip.getHostAddress());
         int serverIP = 0;
         for (byte b : ip.getAddress()) {
@@ -164,14 +164,16 @@ public class Servidor extends JFrame implements ActionListener {
     }
   }
 
-  private void TopologyConstructor(InetAddress ip) throws IOException {
+  private void topologyConstructor(InetAddress ip) throws IOException {
     // Time to make a tree :D
-    CABPacket topologyConstrutor = new CABPacket(
-        TOPOLOGY,
-        new CABControlPacket(10));
+
     Socket new_socket = new Socket(ip, 5001);
+    CABPacket topologyConstrutor = new CABPacket(
+            TOPOLOGY,
+            new CABControlPacket(10, new_socket.getLocalAddress()));
 
     topologyConstrutor.write(new DataOutputStream(new_socket.getOutputStream()));
+    System.out.println("[DEBUG] Sent first topology packet");
 
     // é preciso receber algo?
     // DataInputStream in = new DataInputStream(new_socket.getInputStream());
@@ -185,7 +187,7 @@ public class Servidor extends JFrame implements ActionListener {
         while (true) {
           CABPacket controlPacket = new CABPacket(
               CHOOSE_SERVER,
-              new CABControlPacket(10));
+              new CABControlPacket(10, socket.getLocalAddress()));
           controlPacket.write(new DataOutputStream(socket.getOutputStream()));
           Thread.sleep(60000);
         }
