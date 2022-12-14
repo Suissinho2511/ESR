@@ -42,24 +42,6 @@ public class ONode {
 
 		this.addressTable = new HashMap<>();
 
-		// Just for etapa 3
-		/*
-		for (int i = 0; i < ips.length;) {
-			InetAddress serverIP = InetAddress.getByName(ips[i]);
-			i++;
-			InetAddress sourceIP = InetAddress.getByName(ips[i]);
-			i ++;
-			List<InetAddress> destinationsIP = new ArrayList<>();
-
-			while (!ips[i].equals("fim")) {
-				destinationsIP.add(InetAddress.getByName(ips[i]));
-				i++;
-			}
-			i++;
-
-			addConnection(serverIP, sourceIP, destinationsIP);
-		}*/
-
 
 
 		System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
@@ -217,7 +199,15 @@ public class ONode {
 							break;
 						}
 
+
+
 						CABControlPacket topologyPacket = (CABControlPacket) packet.message;
+
+						if (topologyPacket.getAvailableJumps() <= 0){
+							System.out.println("[DEBUG] I don't have anymore jumps left");
+							break;
+						}
+
 
 						serverIP = topologyPacket.getServer();
 
@@ -350,10 +340,12 @@ public class ONode {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
+
 						if(addressTable.isEmpty()){
 							System.out.println("[DEBUG] Topology not done yet :/");
 							break;
 						}
+
 						CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
 
 						serverIP = InetAddress.getByName(optoutPacket.getMessage());
@@ -364,14 +356,14 @@ public class ONode {
 							break;
 						}
 
-
-
 						removeActiveNeighbour(serverIP, neighbourIP);
+
 						if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
 							newSocket = new Socket(getSourceByServer(serverIP), 5001);
 							out = new DataOutputStream(newSocket.getOutputStream());
 							new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
 							newSocket.close();
+							serverToActiveNeighbours.remove(serverIP);
 						}
 
 						break;
@@ -476,27 +468,6 @@ public class ONode {
 		out.close();
 		s.close();
 	}
-/*
-	private void addConnection(InetAddress serverIP, InetAddress destinationIP) {
-		this.neighbourIP_lock.writeLock().lock();
-
-		this.addressTable.get(serverIP).getValue().add(destinationIP);
-
-		this.neighbourIP_lock.writeLock().unlock();
-
-	}
-
-	private void createConnection(InetAddress serverIP, InetAddress sourceIP) {
-		this.neighbourIP_lock.writeLock().lock();
-		Map.Entry<InetAddress, List<InetAddress>> conections = new AbstractMap.SimpleEntry<InetAddress, List<InetAddress>>(
-				sourceIP, new ArrayList<>());
-
-		this.addressTable.put(serverIP, conections);
-
-		this.neighbourIP_lock.writeLock().unlock();
-
-	}*/
-
 
 	private boolean isNeighbour(InetAddress ip) {
 		this.neighbourIP_lock.readLock().lock();
