@@ -54,8 +54,7 @@ public class Servidor extends JFrame implements ActionListener {
     this.socketControl = new ServerSocket(5001);
 
     topologyConstructor(InetAddress.getByName(argv));
-    controlSendThread(new Socket(argv, 5001)).start();
-    // System.out.println("ola");
+    controlSendThread(argv).start();
 
     // init para a parte do servidor
     sTimer = new Timer(FRAME_PERIOD, this); // init Timer para servidor
@@ -183,15 +182,17 @@ public class Servidor extends JFrame implements ActionListener {
     new_socket.close();
   }
 
-  private Thread controlSendThread(Socket socket) {
+  private Thread controlSendThread(String ip) {
     return new Thread(() -> {
       try {
         while (true) {
+		  Socket socket = new Socket(ip, 5001);
           CABPacket controlPacket = new CABPacket(
               CHOOSE_SERVER,
               new CABControlPacket(10, socket.getLocalAddress()));
 
           controlPacket.write(new DataOutputStream(socket.getOutputStream()));
+		  socket.close();
           Thread.sleep(1000);
         }
 

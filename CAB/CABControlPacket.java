@@ -85,7 +85,7 @@ public class CABControlPacket {
 
 		this.path = new LinkedHashMap<>();
 
-        for (int i = 0; i < this.currentJumps; i++) {
+        for (int i = 0; i <= this.currentJumps; i++) {
             this.path.put(InetAddress.getByName(in.readUTF()), in.readLong());
         }
     }

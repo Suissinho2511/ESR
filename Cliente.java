@@ -53,6 +53,7 @@ public class Cliente {
   // Constructor
   // --------------------------
   public Cliente(String activeNeighbour) throws UnknownHostException {
+
     this.activeNeighbour = InetAddress.getByName(activeNeighbour);
 
     // build GUI
@@ -105,6 +106,10 @@ public class Cliente {
     } catch (SocketException e) {
       System.out.println("Cliente: erro no socket: " + e.getMessage());
     }
+
+	
+
+    controlPackets();
   }
 
   // ------------------------------------
@@ -113,11 +118,9 @@ public class Cliente {
   public static void main(String argv[]) throws Exception {
     // send SETUP message to the server
     Cliente cliente = new Cliente(argv[0]);
-
-    controlPackets();
   }
 
-  private static void controlPackets() {
+  private void controlPackets() {
 
     try (ServerSocket serverSocket = new ServerSocket(5001)) {
       // receive packet
@@ -135,6 +138,10 @@ public class Cliente {
             String str = helloPacket.getMessage();
             System.out.println("[DEBUG] Received ping message from " + socket.getInetAddress().toString()
                 + ":\n" + str);
+
+			//reply
+			sendControlPacket(new CABPacket(MessageType.HELLO, new CABHelloPacket("Yes, I'm still alive...")));
+
           } else {
             System.out.println("Something's wrong with this HELLO packet");
           }
@@ -220,12 +227,14 @@ public class Cliente {
   // -----------------------
   class playButtonListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
+
+      System.out.println("Play Button pressed !");
+	  
       if (bestServer == null)
         sendControlPacket(new CABPacket(MessageType.OPTIN, new CABHelloPacket("Im a client")));
       else
         sendControlPacket(new CABPacket(MessageType.OPTIN, new CABHelloPacket(bestServer.toString())));
 
-      System.out.println("Play Button pressed !");
       // start the timers ...
       cTimer.start();
     }
@@ -237,6 +246,7 @@ public class Cliente {
     public void actionPerformed(ActionEvent e) {
 
       System.out.println("Pause Button pressed !");
+
       // stop the timers ...
       cTimer.stop();
     }
@@ -248,11 +258,12 @@ public class Cliente {
     public void actionPerformed(ActionEvent e) {
 
       System.out.println("Teardown Button pressed !");
-      // stop the timer
-      cTimer.stop();
 
       // optout
       sendControlPacket(new CABPacket(MessageType.OPTOUT, new CABHelloPacket(bestServer.toString())));
+
+      // stop the timer
+      cTimer.stop();
 
       // exit
       System.exit(0);

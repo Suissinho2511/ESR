@@ -146,9 +146,9 @@ public class ONode {
 
 						CABControlPacket controlPacket = (CABControlPacket) packet.message;
 
-						if (controlPacket.getAvailableJumps() <= 0
+						/*if (controlPacket.getAvailableJumps() <= 0
 								|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
-							break;
+							break;*/
 
 						InetAddress serverIP = controlPacket.getServer();
 
@@ -300,7 +300,6 @@ public class ONode {
 							System.out.println("[DEBUG] This packet doesn't contain the correct information");
 							break;
 						}
-
 						if(addressTable.isEmpty()){
 							System.out.println("[DEBUG] Topology not done yet :/");
 							break;
