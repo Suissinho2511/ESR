@@ -161,6 +161,7 @@ public class Cliente {
 			  controlPacket.addNode(bestServer);
 			  packet.message = controlPacket;
               packet.type = MessageType.REPLY_CHOOSE_SERVER;
+              socket = new Socket(socket.getInetAddress(), 5001);
               DataOutputStream out = new DataOutputStream(socket.getOutputStream());
               packet.write(out);
 

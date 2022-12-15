@@ -229,7 +229,7 @@ public class ONode {
 
 
 								new CABPacket(MessageType.REPLY_TOPOLOGY,
-										new CABHelloPacket("d" + serverIP.toString())).write(out);
+										new CABHelloPacket("d" + serverIP.toString().substring(1))).write(out);
 
 								newSocket.close();
 
@@ -272,7 +272,7 @@ public class ONode {
 
 
 						new CABPacket(MessageType.REPLY_TOPOLOGY,
-								new CABHelloPacket("a" + serverIP.toString())).write(out);
+								new CABHelloPacket("a" + serverIP.toString().substring(1))).write(out);
 
 						newSocket.close();
 

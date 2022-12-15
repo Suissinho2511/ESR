@@ -26,12 +26,12 @@ public class CABPacket {
 			case HELLO:
 			case OPTIN:
 			case OPTOUT:
+			case REPLY_TOPOLOGY:
 				message = new CABHelloPacket(in);
 				break;
 			case CHOOSE_SERVER:
 			case REPLY_CHOOSE_SERVER:
 			case TOPOLOGY:
-			case REPLY_TOPOLOGY:
 				message = new CABControlPacket(in);
 				break;
 
@@ -45,6 +45,7 @@ public class CABPacket {
 			case HELLO:
 			case OPTIN:
 			case OPTOUT:
+			case REPLY_TOPOLOGY:
 				if (message instanceof CABHelloPacket) {
 					CABHelloPacket helloMessage = (CABHelloPacket) message;
 					helloMessage.write(out);
@@ -53,7 +54,6 @@ public class CABPacket {
 			case CHOOSE_SERVER:
 			case REPLY_CHOOSE_SERVER:
 			case TOPOLOGY:
-			case REPLY_TOPOLOGY:
 				if (message instanceof CABControlPacket) {
 					CABControlPacket controlMessage = (CABControlPacket) message;
 					controlMessage.write(out);
