@@ -158,7 +158,8 @@ public class Cliente {
             if (bestServer == null || bestDelay > packetDelay) {
 
 			  // append old best server
-			  controlPacket.addNode(bestServer);
+              if(bestServer != null) controlPacket.addNode(bestServer);
+			  
 			  packet.message = controlPacket;
               packet.type = MessageType.REPLY_CHOOSE_SERVER;
               socket = new Socket(socket.getInetAddress(), 5001);
@@ -193,8 +194,8 @@ public class Cliente {
 
 
           new CABPacket(MessageType.REPLY_TOPOLOGY,
-                  new CABHelloPacket("a" + topologyPacket.getServer().toString().substring(1))).write(out);
-          new CABPacket(MessageType.REPLY_TOPOLOGY, topologyPacket).write(out);
+                  new CABHelloPacket("a" + topologyPacket.getServer().toString())).write(out);
+
 
           newSocket.close();
 

@@ -159,6 +159,13 @@ public class ONode {
 
 						serverIP = replyPacket.getLast().getKey();
 
+
+						if (!addressTable.containsKey(serverIP)) {
+							// if it's a client, then the default server will be the first one
+							serverIP = getServers().get(0);
+						}
+
+
 						removeActiveNeighbour(serverIP, neighbourIP);
 
 						// If server stops being active, then we need to opt-out in previous node
