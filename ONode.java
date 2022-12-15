@@ -299,7 +299,7 @@ public class ONode {
 						String message = replyTopologyPacket.getMessage();
 
 
-						serverIP = InetAddress.getByName(message.substring(2));
+						serverIP = InetAddress.getByName(message.substring(1));
 
 						if(!addressTable.containsKey(serverIP)){
 							System.out.println("[DEBUG] Server " + serverIP + " doesn't exist in my address table");
@@ -339,7 +339,7 @@ public class ONode {
 							serverIP = getServers().get(0);
 						} else {
 							// if it's a node, then its requesting a specific server
-							serverIP = InetAddress.getByName(message);
+							serverIP = InetAddress.getByName(message.substring(1));
 						}
 
 						if(!addressTable.containsKey(serverIP)){
@@ -363,7 +363,7 @@ public class ONode {
 
 							serverToActiveNeighbours.put(serverIP, new ArrayList<>());
 
-							this.neighbourIP_lock.readLock().unlock();
+							this.neighbourIP_lock.writeLock().unlock();
 
 							// if a new server is added, we need to send this reply to before node of this
 							// thing
@@ -373,13 +373,14 @@ public class ONode {
 							newSocket.close();
 						}
 						else{
-							this.neighbourIP_lock.readLock().unlock();
+							this.neighbourIP_lock.writeLock().unlock();
 						}
 
+						this.neighbourIP_lock.writeLock().lock();
 						addActiveNeighbour(serverIP, neighbourIP);
+						this.neighbourIP_lock.writeLock().unlock();
 
 						System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
-						this.neighbourIP_lock.writeLock().unlock();
 
 						break;
 					case OPTOUT:
@@ -395,7 +396,7 @@ public class ONode {
 
 						CABHelloPacket optoutPacket = (CABHelloPacket) packet.message;
 
-						serverIP = InetAddress.getByName(optoutPacket.getMessage());
+						serverIP = InetAddress.getByName(optoutPacket.getMessage().substring(1));
 
 						this.neighbourIP_lock.writeLock().lock();
 

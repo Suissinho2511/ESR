@@ -194,7 +194,7 @@ public class Cliente {
 
 
           new CABPacket(MessageType.REPLY_TOPOLOGY,
-                  new CABHelloPacket("a" + topologyPacket.getServer().toString())).write(out);
+                  new CABHelloPacket("a" + topologyPacket.getServer().toString().substring(1))).write(out);
 
 
           newSocket.close();
@@ -300,7 +300,7 @@ public class Cliente {
         //    + rtp_packet.gettimestamp() + " ms, of type " + rtp_packet.getpayloadtype());
 
         // print header bitstream:
-        rtp_packet.printheader();
+        //rtp_packet.printheader();
 
         // get the payload bitstream from the RTPpacket object
         int payload_length = rtp_packet.getpayload_length();

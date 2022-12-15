@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.ArrayList;
 
 public class CABControlPacket {
 
@@ -34,11 +35,13 @@ public class CABControlPacket {
         return this.path.entrySet().iterator().next();
     }
 
-    @SuppressWarnings("unchecked")
+    //@SuppressWarnings("unchecked")
     public <K, V> Entry<InetAddress, Long> getLast() throws NoSuchFieldException, IllegalAccessException {
-        Field tail = this.path.getClass().getDeclaredField("tail");
+        /*Field tail = this.path.getClass().getDeclaredField("tail");
         tail.setAccessible(true);
-        return (Entry<InetAddress, Long>) tail.get(this.path);
+        return (Entry<InetAddress, Long>) tail.get(this.path);*/
+		List<Entry<InetAddress, Long>> lentries = new ArrayList<Entry<InetAddress, Long>>(this.path.entrySet());
+		return lentries.get(lentries.size() - 1);
     }
 
     public InetAddress getServer() {
