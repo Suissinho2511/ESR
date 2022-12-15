@@ -339,8 +339,10 @@ public class ONode {
 							break;
 						}
 
-						if(!addressTable.get(serverIP).isConnection(neighbourIP))
+						if(!addressTable.get(serverIP).isConnection(neighbourIP)) {
 							addressTable.get(serverIP).addConnection(neighbourIP);
+							System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
+						}
 
 						if(isActiveNeighbour(serverIP, neighbourIP)){
 							System.out.println("[DEBUG] " + neighbourIP + " is already an active neighbour");
@@ -481,7 +483,7 @@ public class ONode {
 					byte[] data = data_packet.getData();
 					RTPpacket packet = new RTPpacket(data, data.length);
 					InetAddress serverIP = packet.getServerIP();
-					System.out.println("[DEBUG] Received data from "+ data_packet.getAddress() +" (server "+serverIP+")");
+					//System.out.println("[DEBUG] Received data from "+ data_packet.getAddress() +" (server "+serverIP+")");
 
 					// Flood neighbours
 					this.neighbourIP_lock.readLock().lock();
@@ -495,7 +497,7 @@ public class ONode {
 
 							DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
 							socket_data.send(out_packet);
-							System.out.println("[DEBUG] Sent data to "+ip);
+							//System.out.println("[DEBUG] Sent data to "+ip);
 						}
 					}
 					else{
