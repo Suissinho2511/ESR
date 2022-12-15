@@ -80,4 +80,13 @@ public class AddressTable {
 
     public boolean isConnection(InetAddress destination){return this.destinations.contains(destination);}
 
+    @Override
+    public String toString(){
+        return "{Server: " + this.serverIP.toString() +
+                ", Source: " + this.sourceIP.toString() +
+                ", Delay: " + this.expectedDelay.toString() +
+                ", Jumps: " + this.jumps +
+                ", destinations: " + this.destinations.toString() + "}";
+    }
+
 }
