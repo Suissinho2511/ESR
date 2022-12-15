@@ -119,7 +119,6 @@ public class ONode {
 						}
 						if(addressTable.isEmpty()){
 							System.out.println("[DEBUG] Topology not done yet :/");
-							this.neighbourIP_lock.readLock().unlock();
 							break;
 						}
 
@@ -128,6 +127,7 @@ public class ONode {
 						InetAddress serverIP = controlPacket.getServer();
 
 						controlPacket.addNode(s.getLocalAddress());
+
 
 						// sent to those that hasn't passed through
 						List<InetAddress> destinations = addressTable.get(serverIP).getDestinations();
@@ -152,7 +152,6 @@ public class ONode {
 
 						if(addressTable.isEmpty()){
 							System.out.println("[DEBUG] Topology not done yet :/");
-							this.neighbourIP_lock.readLock().unlock();
 							break;
 						}
 
