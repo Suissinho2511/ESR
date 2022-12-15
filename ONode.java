@@ -90,7 +90,7 @@ public class ONode {
 				CABPacket packet = new CABPacket(in);
 				InetAddress neighbourIP = s.getInetAddress();
 
-				System.out.println("[DEBUG] Received " + packet.type.toString() + " from "+ neighbourIP.toString());
+				System.out.println("[DEBUG] Received from "+ neighbourIP.toString()+":\n" + packet.toString());
 
 				if(!isNeighbour(neighbourIP)) {
 					addNeighbour(neighbourIP);
@@ -262,6 +262,7 @@ public class ONode {
 							newSocket.close();
 
 							System.out.println("[DEBUG] TOPOLOGY packet sent to " + neighbour);
+							System.out.println("[DEBUG] Topology: " + addressTable.toString());
 						}
 
 
@@ -291,7 +292,7 @@ public class ONode {
 						String message = replyTopologyPacket.getMessage();
 
 
-						serverIP = InetAddress.getByName(message.substring(1));
+						serverIP = InetAddress.getByName(message.substring(2));
 
 						if(!addressTable.containsKey(serverIP)){
 							System.out.println("[DEBUG] Server " + serverIP + " doesn't exist in my address table");
