@@ -119,96 +119,100 @@ public class Cliente {
   }
 
   private void controlPackets() {
+	
+	ServerSocket serverSocket = null;
+    try {serverSocket = new ServerSocket(5001);} catch(IOException e) {System.out.println("ServerSocket woopsie");System.exit(-1);}
 
-    try (ServerSocket serverSocket = new ServerSocket(5001)) {
       // receive packet
-      Socket socket = serverSocket.accept();
-      DataInputStream in = new DataInputStream(socket.getInputStream());
-      CABPacket packet = new CABPacket(in);
-	  InetAddress ip = socket.getInetAddress();
+	while(true) { try {
+		Socket socket = serverSocket.accept();
+		DataInputStream in = new DataInputStream(socket.getInputStream());
+		CABPacket packet = new CABPacket(in);
+		InetAddress ip = socket.getInetAddress();
 
-	  System.out.println("[DEBUG] Received " + packet.type.toString() + " from "+ ip.toString());
+		System.out.println("[DEBUG] Received " + packet.type.toString() + " from "+ ip.toString());
 
-      // process packet
-      switch (packet.type) {
-        // Will just print the message
-        case HELLO:
-          if (packet.message instanceof CABHelloPacket) {
-			CABHelloPacket helloPacket = (CABHelloPacket) packet.message;
-			
-            String str = helloPacket.getMessage();
-            System.out.println("[DEBUG] Received ping message from " + socket.getInetAddress().toString()
-                + ":\n" + str);
+		// process packet
+		switch (packet.type) {
+			// Will just print the message
+			case HELLO:
+			if (packet.message instanceof CABHelloPacket) {
+				CABHelloPacket helloPacket = (CABHelloPacket) packet.message;
+				
+				String str = helloPacket.getMessage();
+				System.out.println("[DEBUG] Received ping message from " + socket.getInetAddress().toString()
+					+ ":\n" + str);
 
-			//reply
-			sendControlPacket(new CABPacket(MessageType.HELLO, new CABHelloPacket("Yes, I'm still alive...")));
+				//reply
+				sendControlPacket(new CABPacket(MessageType.HELLO, new CABHelloPacket("Yes, I'm still alive...")));
 
-          } else {
-            System.out.println("Something's wrong with this HELLO packet");
-          }
-          break;
+			} else {
+				System.out.println("Something's wrong with this HELLO packet");
+			}
+			break;
 
-        // Will compare with current server and reply if anything changed
-        case CHOOSE_SERVER:
-          if (packet.message instanceof CABControlPacket) {
-			CABControlPacket controlPacket = (CABControlPacket) packet.message;
-            InetAddress packetServer = controlPacket.getServer();
-            Long packetDelay = controlPacket.getDelay();
+			// Will compare with current server and reply if anything changed
+			case CHOOSE_SERVER:
+			if (packet.message instanceof CABControlPacket) {
+				CABControlPacket controlPacket = (CABControlPacket) packet.message;
+				InetAddress packetServer = controlPacket.getServer();
+				Long packetDelay = controlPacket.getDelay();
 
-            if (bestServer == null || bestDelay > packetDelay) {
+				if (bestServer == null || bestDelay > packetDelay) {
 
-			  // append old best server
-              if(bestServer != null) controlPacket.addNode(bestServer);
+				// append old best server
+				if(bestServer != null) controlPacket.addNode(bestServer);
 
-			  packet.message = controlPacket;
-              packet.type = MessageType.REPLY_CHOOSE_SERVER;
-              socket = new Socket(socket.getInetAddress(), 5001);
-              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-              packet.write(out);
+				packet.message = controlPacket;
+				packet.type = MessageType.REPLY_CHOOSE_SERVER;
+				socket = new Socket(socket.getInetAddress(), 5001);
+				DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+				packet.write(out);
 
-              bestServer = packetServer;
-              bestDelay = packetDelay;
+				bestServer = packetServer;
+				bestDelay = packetDelay;
 
-            } else if (bestServer == packetServer) {
-              bestDelay = packetDelay;
-            }
+				} else if (bestServer == packetServer) {
+				bestDelay = packetDelay;
+				}
 
-          } else {
-            System.out.println("Something's wrong with this CHOOSE_SERVER packet");
-          }
+			} else {
+				System.out.println("Something's wrong with this CHOOSE_SERVER packet");
+			}
 
-          break;
+			break;
 
-        case TOPOLOGY:
-          if (!(packet.message instanceof CABControlPacket)) {
-            System.out.println("[DEBUG] This packet doesn't contain the correct information");
-            break;
-          }
+			case TOPOLOGY:
+			if (!(packet.message instanceof CABControlPacket)) {
+				System.out.println("[DEBUG] This packet doesn't contain the correct information");
+				break;
+			}
 
-          CABControlPacket topologyPacket = (CABControlPacket) packet.message;
+			CABControlPacket topologyPacket = (CABControlPacket) packet.message;
 
-          InetAddress neighbourIP = socket.getInetAddress();
+			InetAddress neighbourIP = socket.getInetAddress();
 
-          Socket newSocket = new Socket(neighbourIP, 5001);
-          DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
-
-
-          new CABPacket(MessageType.REPLY_TOPOLOGY,
-                  new CABHelloPacket("a" + topologyPacket.getServer().toString().substring(1))).write(out);
+			Socket newSocket = new Socket(neighbourIP, 5001);
+			DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 
 
-          newSocket.close();
+			new CABPacket(MessageType.REPLY_TOPOLOGY,
+					new CABHelloPacket("a" + topologyPacket.getServer().toString().substring(1))).write(out);
 
-          System.out.println("[DEBUG] Confirmation of connection sent to " + neighbourIP);
-          break;
 
-        default:
-          break;
-      }
+			newSocket.close();
 
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+			System.out.println("[DEBUG] Confirmation of connection sent to " + neighbourIP);
+			break;
+
+			default:
+			break;
+		}
+
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
   }
 
   // ------------------------------------

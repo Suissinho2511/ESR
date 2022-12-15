@@ -89,6 +89,7 @@ public class ONode {
 				DataInputStream in = new DataInputStream(s.getInputStream());
 				CABPacket packet = new CABPacket(in);
 				InetAddress neighbourIP = s.getInetAddress();
+				s.close();
 
 				System.out.println("[DEBUG] Received from "+ neighbourIP.toString()+":\n" + packet.toString());
 
@@ -323,6 +324,7 @@ public class ONode {
 							System.out.println("[DEBUG] Connection with " + neighbourIP + " confirmed");
 						}
 
+						System.out.println("[DEBUG] Topology: " + addressTable.toString());
 
 						break;
 
