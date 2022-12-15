@@ -125,6 +125,9 @@ public class Cliente {
       Socket socket = serverSocket.accept();
       DataInputStream in = new DataInputStream(socket.getInputStream());
       CABPacket packet = new CABPacket(in);
+	  InetAddress ip = socket.getInetAddress();
+
+	  System.out.println("[DEBUG] Received " + packet.type.toString() + " from "+ ip.toString());
 
       // process packet
       switch (packet.type) {
