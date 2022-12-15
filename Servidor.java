@@ -193,7 +193,7 @@ public class Servidor extends JFrame implements ActionListener {
 
           controlPacket.write(new DataOutputStream(socket.getOutputStream()));
 		  socket.close();
-          Thread.sleep(1000);
+          Thread.sleep(10000);
         }
 
       } catch (UnknownHostException e) {

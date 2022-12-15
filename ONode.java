@@ -134,7 +134,10 @@ public class ONode {
 						List<InetAddress> destinations = addressTable.get(serverIP).getDestinations();
 
 						for (InetAddress ip : destinations) {
-							Socket newSocket = new Socket(ip, 5001);
+
+							Socket newSocket = null;
+							try {newSocket = new Socket(ip, 5001);} catch (Exception ignore) {continue;};
+
 							if (!controlPacket.getPathAsInetAddress().contains(ip)) {
 								//add our own IP
 								CABControlPacket toSend = controlPacket;

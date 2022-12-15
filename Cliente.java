@@ -171,6 +171,7 @@ public class Cliente {
 
 				bestServer = packetServer;
 				bestDelay = packetDelay;
+				System.out.println("Best server: "+bestServer.toString()+"; Best delay: "+bestDelay);
 
 				} else if (bestServer == packetServer) {
 				bestDelay = packetDelay;
@@ -298,6 +299,8 @@ public class Cliente {
 
         // create an RTPpacket object from the DP
         RTPpacket rtp_packet = new RTPpacket(rcvdp.getData(), rcvdp.getLength());
+		if(bestServer == null) bestServer = rtp_packet.getServerIP();
+		if(bestDelay == null) bestDelay = new Long(99999999);
 
         // print important header fields of the RTP packet received:
         //System.out.println("Got RTP packet with SeqNum # " + rtp_packet.getsequencenumber() + " TimeStamp "
