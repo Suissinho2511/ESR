@@ -127,16 +127,16 @@ public class Servidor extends JFrame implements ActionListener {
 
         // Builds an RTPpacket object containing the frame
         InetAddress ip = RTPsocket.getLocalAddress();
-        System.out.println("IP in string format: " + ip.getHostAddress());
+        //System.out.println("IP in string format: " + ip.getHostAddress());
         int serverIP = 0;
         for (byte b : ip.getAddress()) {
           serverIP = serverIP << 8 | (b & 0xFF);
         }
-        System.out.println("IP in int format: " + serverIP);
+        //System.out.println("IP in int format: " + serverIP);
 
         RTPpacket rtp_packet = new RTPpacket(MJPEG_TYPE, imagenb, imagenb * FRAME_PERIOD, sBuf, image_length, serverIP);
 
-        System.out.println("IP in string format: " + rtp_packet.getServerIP());
+        //System.out.println("IP in string format: " + rtp_packet.getServerIP());
         // get to total length of the full rtp packet to send
         int packet_length = rtp_packet.getlength();
 
@@ -148,9 +148,9 @@ public class Servidor extends JFrame implements ActionListener {
         senddp = new DatagramPacket(packet_bits, packet_length, ClientIPAddr, RTP_dest_port);
         RTPsocket.send(senddp);
 
-        System.out.println("Send frame #" + imagenb);
+        //System.out.println("Send frame #" + imagenb);
         // print the header bitstream
-        rtp_packet.printheader();
+        //rtp_packet.printheader();
 
         // update GUI
         // label.setText("Send frame #" + imagenb);
