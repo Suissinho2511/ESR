@@ -159,7 +159,7 @@ public class Cliente {
 
 			  // append old best server
               if(bestServer != null) controlPacket.addNode(bestServer);
-			  
+
 			  packet.message = controlPacket;
               packet.type = MessageType.REPLY_CHOOSE_SERVER;
               socket = new Socket(socket.getInetAddress(), 5001);

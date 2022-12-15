@@ -126,7 +126,7 @@ public class ONode {
 
 						InetAddress serverIP = controlPacket.getServer();
 
-						controlPacket.addNode(s.getLocalAddress());
+
 
 
 						// sent to those that hasn't passed through
@@ -135,7 +135,12 @@ public class ONode {
 						for (InetAddress ip : destinations) {
 							Socket newSocket = new Socket(ip, 5001);
 							if (!controlPacket.getPathAsInetAddress().contains(ip)) {
-								new CABPacket(MessageType.CHOOSE_SERVER, controlPacket)
+								//add our own IP
+								CABControlPacket toSend = controlPacket;
+								toSend.addNode(newSocket.getLocalAddress());
+								packet.message = toSend;
+
+								new CABPacket(MessageType.CHOOSE_SERVER, toSend)
 										.write(new DataOutputStream(newSocket.getOutputStream()));
 							}
 							newSocket.close();
