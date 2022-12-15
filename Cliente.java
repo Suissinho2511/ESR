@@ -191,6 +191,9 @@ public class Cliente {
           Socket newSocket = new Socket(neighbourIP, 5001);
           DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 
+
+          new CABPacket(MessageType.REPLY_TOPOLOGY,
+                  new CABHelloPacket("a" + topologyPacket.getServer().toString().substring(1))).write(out);
           new CABPacket(MessageType.REPLY_TOPOLOGY, topologyPacket).write(out);
 
           newSocket.close();
