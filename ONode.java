@@ -42,10 +42,6 @@ public class ONode {
 
 		this.addressTable = new HashMap<>();
 
-
-
-		System.out.println("[INFO] Address Table:\n" + this.addressTable.toString());
-
 		serverToActiveNeighbours = new HashMap<>();
 
 		try {
@@ -123,21 +119,20 @@ public class ONode {
 						}
 						if(addressTable.isEmpty()){
 							System.out.println("[DEBUG] Topology not done yet :/");
+							this.neighbourIP_lock.readLock().unlock();
 							break;
 						}
 
 						CABControlPacket controlPacket = (CABControlPacket) packet.message;
-
-						/*if (controlPacket.getAvailableJumps() <= 0
-								|| controlPacket.getPathAsInetAddress().contains(s.getLocalAddress()))
-							break;*/
 
 						InetAddress serverIP = controlPacket.getServer();
 
 						controlPacket.addNode(s.getLocalAddress());
 
 						// sent to those that hasn't passed through
-						for (InetAddress ip : addressTable.get(serverIP).getDestinations()) {
+						List<InetAddress> destinations = addressTable.get(serverIP).getDestinations();
+
+						for (InetAddress ip : destinations) {
 							Socket newSocket = new Socket(ip, 5001);
 							if (!controlPacket.getPathAsInetAddress().contains(ip)) {
 								new CABPacket(MessageType.CHOOSE_SERVER, controlPacket)
@@ -157,6 +152,7 @@ public class ONode {
 
 						if(addressTable.isEmpty()){
 							System.out.println("[DEBUG] Topology not done yet :/");
+							this.neighbourIP_lock.readLock().unlock();
 							break;
 						}
 
@@ -167,12 +163,17 @@ public class ONode {
 						removeActiveNeighbour(serverIP, neighbourIP);
 
 						// If server stops being active, then we need to opt-out in previous node
+						this.neighbourIP_lock.writeLock().lock();
+
 						if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
+
+							serverToActiveNeighbours.remove(serverIP);
+
 							Socket newSocket = new Socket(getSourceByServer(serverIP), 5001);
 							DataOutputStream out = new DataOutputStream(newSocket.getOutputStream());
 							new CABPacket(MessageType.OPTOUT, new CABHelloPacket(serverIP.toString())).write(out);
 							newSocket.close();
-							serverToActiveNeighbours.remove(serverIP);
+
 						}
 
 						InetAddress newServerIp = replyPacket.getServer();
@@ -191,6 +192,7 @@ public class ONode {
 						addActiveNeighbour(newServerIp, neighbourIP);
 
 						System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
+						this.neighbourIP_lock.writeLock().unlock();
 
 						break;
 					case TOPOLOGY:
@@ -346,8 +348,13 @@ public class ONode {
 							break;
 						}
 
+
+						this.neighbourIP_lock.writeLock().lock();
 						if (!serverToActiveNeighbours.containsKey(serverIP)) {
+
 							serverToActiveNeighbours.put(serverIP, new ArrayList<>());
+
+							this.neighbourIP_lock.readLock().unlock();
 
 							// if a new server is added, we need to send this reply to before node of this
 							// thing
@@ -356,10 +363,14 @@ public class ONode {
 							new CABPacket(MessageType.OPTIN, optinPacket).write(out);
 							newSocket.close();
 						}
+						else{
+							this.neighbourIP_lock.readLock().unlock();
+						}
 
 						addActiveNeighbour(serverIP, neighbourIP);
 
 						System.out.println("[DEBUG] Active neighbours: "+this.serverToActiveNeighbours.toString());
+						this.neighbourIP_lock.writeLock().unlock();
 
 						break;
 					case OPTOUT:
@@ -377,6 +388,8 @@ public class ONode {
 
 						serverIP = InetAddress.getByName(optoutPacket.getMessage());
 
+						this.neighbourIP_lock.writeLock().lock();
+
 						if (!isActiveNeighbour(serverIP, neighbourIP)){
 							System.out.println("[DEBUG] Neighbour " + neighbourIP +
 									" is already not active to Server " + serverIP);
@@ -385,13 +398,20 @@ public class ONode {
 
 						removeActiveNeighbour(serverIP, neighbourIP);
 
+
+
 						if (serverToActiveNeighbours.get(serverIP).isEmpty()) {
+
+							//We remove right away to unlock as fast as possible
+							serverToActiveNeighbours.remove(serverIP);
+
 							newSocket = new Socket(getSourceByServer(serverIP), 5001);
 							out = new DataOutputStream(newSocket.getOutputStream());
 							new CABPacket(MessageType.OPTOUT, optoutPacket).write(out);
 							newSocket.close();
-							serverToActiveNeighbours.remove(serverIP);
+
 						}
+						this.neighbourIP_lock.writeLock().unlock();
 
 						break;
 
@@ -469,15 +489,20 @@ public class ONode {
 					// just sends packets to whomever wants
 
 					if (serverToActiveNeighbours.get(serverIP) != null){
+						List<InetAddress> neighbours = serverToActiveNeighbours.get(serverIP);
+						this.neighbourIP_lock.readLock().unlock();
 
-						for (InetAddress ip : serverToActiveNeighbours.get(serverIP)) {
+						for (InetAddress ip : neighbours) {
 
 							DatagramPacket out_packet = new DatagramPacket(data, data.length, ip, 5000);
 							socket_data.send(out_packet);
 							System.out.println("[DEBUG] Sent data to "+ip);
 						}
 					}
-					this.neighbourIP_lock.readLock().unlock();
+					else{
+						this.neighbourIP_lock.readLock().unlock();
+					}
+
 				}
 
 			} catch (Exception e) {
